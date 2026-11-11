@@ -1,0 +1,7 @@
+{
+  "name": "Atelier Mobilier 3D - Conception, Calepinage & Débit Sur-Mesure",
+  "description": "Studio professionnel de conception de mobilier sur-mesure : caissons droits et sous-pente, aménagement intérieur, vue 3D photoréaliste animée, calepinage de panneaux, fiches d'usinage et export atelier.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

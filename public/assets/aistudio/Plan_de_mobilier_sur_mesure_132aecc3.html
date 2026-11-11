@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan de mobilier sur mesure</title>
+<style>
+:root{--bg:#fff;--fg:#14233b;--mut:#5b6b85;--pri:#1d5fbf;--soft:#eaf2fd;--bd:#cfdcf0;--pc:#d9e8fb;--acc:#d9822b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a2b;--fg:#e6eefb;--mut:#9fb2d0;--pri:#6aa6f5;--soft:#17263d;--bd:#2b3f60;--pc:#1e3556;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a2b;--fg:#e6eefb;--mut:#9fb2d0;--pri:#6aa6f5;--soft:#17263d;--bd:#2b3f60;--pc:#1e3556;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:1100px;margin-inline:auto;padding:12px}
+h1{font-size:20px;color:var(--pri);margin:4px 0 10px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:4px 0;z-index:5}
+.tabs button{flex:1;padding:9px 4px;border:1px solid var(--bd);background:var(--soft);color:var(--fg);border-radius:8px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:3px}
+.w2,.ck{grid-column:1/3}.ck{flex-direction:row;align-items:center;gap:8px}
+input,select{font:inherit;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);width:100%}
+.ck input{width:auto}
+#cv{width:100%;height:58vh;background:var(--soft);border-radius:12px;touch-action:none;display:block}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--bd);padding:6px 5px;text-align:left}
+th{color:var(--pri);background:var(--soft)}
+.pl,.fs{width:100%;height:auto;display:block;margin:6px 0}
+.sh{fill:var(--bg);stroke:var(--pri);stroke-width:8}
+.pc{fill:var(--pc);stroke:var(--pri);stroke-width:3}
+.tn{font-size:90px;fill:var(--pri);text-anchor:middle;font-weight:700}
+.td{font-size:48px;fill:var(--fg);text-anchor:middle}
+.dm{font-size:42px;fill:var(--mut);text-anchor:middle}
+.hf{fill:var(--acc)}.ht{stroke:var(--acc)}.hl{stroke:#1a9a6a}
+.card{border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0;background:var(--bg)}
+.card h3{margin:0 0 6px;font-size:15px;color:var(--pri)}
+.card p{margin:3px 0;font-size:13px}
+.mut{color:var(--mut);font-size:13px}.err{color:#c0392b;font-weight:600}.ok{color:#1a9a6a;font-weight:600}
+h2{font-size:16px;color:var(--pri);margin:14px 0 6px}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.ov{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.ob{fill:var(--pc);fill-opacity:.85;stroke:var(--pri);stroke-width:3}
+.hn{font-size:48px;fill:var(--fg);text-anchor:middle;font-weight:700}
+.ht2{font-size:24px;fill:var(--fg)}
+.bt{padding:8px 12px;border:0;border-radius:8px;background:var(--pri);color:#fff;font:inherit;margin:4px 4px 4px 0;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.bt-sec{background:var(--soft);color:var(--fg);border:1px solid var(--bd)}
+.bt-danger{background:#e74c3c;color:#fff}
+#sch,#sch-comp{max-height:50vh;width:100%}
+.hq{fill:var(--acc);fill-opacity:.35;stroke:var(--acc);stroke-width:2}.hp{fill:var(--acc);fill-opacity:.5}#asm li{margin:4px 0}.bt:disabled{opacity:.4}.cw{fill:var(--pc);stroke:var(--pri);stroke-width:4}.ci{fill:var(--bg);stroke:var(--bd);stroke-width:3}.dr{fill:none;stroke:var(--pri);stroke-dasharray:14 8;stroke-width:4;pointer-events:none}.tr{fill:var(--soft);stroke:var(--pri);stroke-width:3;pointer-events:none}.sl{fill:none;stroke:var(--acc);stroke-width:8;pointer-events:none}.tx{fill:var(--mut);text-anchor:middle;pointer-events:none}
+.prop-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.prop-card{border:1px solid var(--bd);background:var(--soft);padding:8px 12px;border-radius:8px;flex:1;min-width:180px}
+
+.comp-workspace{display:grid;grid-template-columns:1fr;gap:14px;margin-top:10px}
+@media(min-width:768px){.comp-workspace{grid-template-columns:1.1fr 0.9fr;align-items:start}}
+.schem-container{background:var(--soft);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;position:sticky;top:60px}
+.breadcrumb{font-size:12px;font-weight:600;color:var(--pri);margin-bottom:6px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hobl{stroke:var(--acc);stroke-width:8;stroke-dasharray:24 12;pointer-events:none}.bb{fill:none;stroke:var(--mut);stroke-dasharray:8 6;stroke-width:2}.ci{fill:var(--bg);stroke:var(--bd);stroke-width:3}.cw{fill:var(--pc);stroke:var(--pri);stroke-width:4}.dr{fill:none;stroke:var(--pri);stroke-dasharray:14 8;stroke-width:4;pointer-events:none}.tr{fill:var(--soft);stroke:var(--pri);stroke-width:3;pointer-events:none}.sl{fill:none;stroke:var(--acc);stroke-width:8;pointer-events:none}.tx{fill:var(--mut);text-anchor:middle;pointer-events:none}
+
+:root{--l:#1d5fbf;--r:#0e8a8f}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--l:#6aa6f5;--r:#4fc3c8}}
+:root[data-theme="dark"]{--l:#6aa6f5;--r:#4fc3c8}
+#s0 input:not([type=checkbox]),#s0 select{min-height:42px;font-size:16px}
+#s0 label{font-size:12.5px;font-weight:600}
+#s0 .ck{font-weight:500;font-size:14px;color:var(--fg);padding:6px 0}
+#s0 input[type=checkbox]{width:20px;height:20px;accent-color:var(--pri)}
+#s0 h3{font-size:14px;letter-spacing:.2px}
+.side small{font-weight:400;color:var(--mut);font-size:11px}[hidden]{display:none!important}.heroS{grid-column:1/-1}.hero{background:var(--soft);border-color:var(--pri)}
+.heroG{display:grid;grid-template-columns:1fr 150px;gap:10px}
+.pvG{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv{width:100%;height:auto;max-height:190px;display:block;background:var(--soft);border-radius:10px}
+.pvp{fill:var(--pc);stroke:var(--pri);stroke-width:5;stroke-linejoin:round}
+.pvl{fill:var(--l);font-weight:700}.pvr{fill:var(--r);font-weight:700}.pvm{fill:var(--mut)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.side{border:1px solid var(--bd);border-top:5px solid var(--l);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.side.R{border-top-color:var(--r)}
+.side.L h3{color:var(--l);margin:0}.side.R h3{color:var(--r);margin:0;text-align:right}
+.side.R label{text-align:right}.side.R input:not([type=checkbox]){text-align:right}
+.side.R .ck{justify-content:flex-end}
+.sets{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:860px){.sets{grid-template-columns:1fr 1fr;align-items:start}}
+details.card>summary{cursor:pointer;font-weight:700;color:var(--pri);font-size:14px;padding:2px 0;list-style:none}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::before{content:"▸ ";color:var(--pri)}
+details.card[open]>summary::before{content:"▾ "}
+details.card[open]>summary{margin-bottom:8px}
+details.card>summary .mut{font-weight:400;margin-left:6px;font-size:12px}
+.mat{padding:8px 0;border-top:1px dashed var(--bd)}.mat:first-of-type{border-top:0;padding-top:0}
+.mt{display:block;font-size:13px;font-weight:700;color:var(--fg);margin-bottom:4px}
+.mrow{display:grid;grid-template-columns:1fr 100px;gap:8px}
+.actions{margin:12px 0}
+@media(max-width:420px){.heroG{grid-template-columns:1fr}}
+#s0 input:disabled,#s0 select:disabled{opacity:.55;background:var(--soft)}
+.tabs{overflow-x:auto;scrollbar-width:thin}.tabs button{white-space:nowrap;flex:1 0 auto;padding:9px 12px;font-size:13.5px}
+.eqb{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--bg)}.eqb>b,.eqb>summary{display:block;margin-bottom:6px;color:var(--pri);font-weight:700;cursor:pointer}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.bdr{fill:var(--pri);fill-opacity:.55;cursor:pointer}.bsel{fill:var(--acc);fill-opacity:.95}.bdh{fill:transparent;cursor:pointer}.rodl{stroke:var(--acc);stroke-width:10;pointer-events:none}
+@media(min-width:900px){.comp-workspace{grid-template-columns:1fr 1fr;align-items:start}}
+@media print{.tabs,#s0,#s1,#s2,#s4,#s5,.noprint{display:none!important}body{padding:0}.card{break-inside:avoid}}
+</style></head><body>
+<h1>Plan de mobilier sur mesure</h1>
+<nav class="tabs">
+  <button data-s="0" class="on">1. Dimensions</button>
+  <button data-s="5" id="tabSep">1.1 Séparation en modules</button>
+  <button data-s="4">2. Aménagement</button>
+  <button data-s="1">3. Armoire</button>
+  <button data-s="2">4. Vue 3D</button>
+  <button data-s="3">5. Plan & Calepinage</button>
+</nav>
+
+<!-- SECTION 0 : CONCEPTION MODULE INDIVIDUEL -->
+<div class="noprint" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button class="bt" onclick="saveProject()">💾 Enregistrer le projet (JSON)</button><button class="bt bt-sec" onclick="$('loadFile').click()">📂 Ouvrir un projet</button><input type="file" id="loadFile" accept=".json,application/json" hidden></div>
+<div id="projBox" class="card noprint" hidden><p class="mut">Texte du projet (à copier, ou à coller pour charger) :</p><textarea id="projTxt" style="width:100%;height:120px"></textarea><button class="bt" onclick="loadFromText()">Charger ce texte</button><button class="bt bt-sec" onclick="$('projBox').hidden=true">Fermer</button></div>
+<section id="s0">
+<div class="card hero"><div class="heroG">
+<label>Nom du module<input id="modName" type="text" value="Module 1"></label>
+<label>Largeur du caisson (mm)<input id="W" type="number" inputmode="decimal" value="600"></label>
+<label class="heroS">Forme du module<select id="sym"><option value="S">⚖️ Symétrique — le côté droit suit le côté gauche</option><option value="A">◢ Asymétrique — gauche et droite différents</option></select></label>
+</div></div>
+
+<div class="card"><h3>Aperçu en direct</h3><div class="pvG"><svg id="pvF" class="pv"></svg><svg id="pvD" class="pv"></svg></div></div>
+
+<div class="sides" id="sidesBox">
+<div class="side L"><h3><span id="hL">◀ Côté gauche</span> <small>vu de face</small></h3>
+<label><span id="lH">Hauteur gauche Hg (mm)</span><input id="H" type="number" inputmode="decimal" value="600"></label>
+<label><span id="lD">Profondeur gauche Dg (mm)</span><input id="Dg" type="number" inputmode="decimal" value="600"></label>
+<label class="ck"><input type="checkbox" id="fillerL"> <span id="lF">Filler gauche</span></label>
+</div>
+<div class="side R" id="sideR"><h3><span id="hR">Côté droit ▶</span> <small>vu de face</small></h3>
+<label>Hauteur droite Hd (mm)<input id="Hd" type="number" inputmode="decimal" value="600"></label>
+<label>Profondeur droite Dd (mm)<input id="Dd" type="number" inputmode="decimal" value="600"></label>
+<label class="ck"><input type="checkbox" id="fillerR"> Filler droit</label>
+</div>
+</div>
+
+<div class="card"><h3>Forme et obliques</h3>
+<div class="g">
+<div id="obBox" class="g w2" style="margin:0"><label>Hauteurs différentes : plan oblique<select id="obH"><option value="haut">Dessus oblique, dessous plat</option><option value="bas">Dessous oblique, dessus plat</option></select></label>
+<label>Profondeurs différentes : face oblique<select id="obq"><option value="fond">Fond oblique, face avant plane</option><option value="avant">Face avant oblique, fond plan</option></select></label>
+<label class="ck w2"><input type="checkbox" id="trapHoriz"> Panneaux horizontaux en trapèze (relient les 2 profondeurs)</label></div>
+<label>Largeur des fillers (mm)<input id="fillerW" type="number" inputmode="decimal" value="50"></label>
+</div>
+<p class="mut" id="symNote">« Face » = le côté ouvert, celui des portes ; gauche et droite se lisent en regardant la face. Le plan oblique joue quand Hg ≠ Hd. La face oblique joue quand Dg ≠ Dd avec « trapèze » coché.</p>
+</div>
+
+<div class="sets">
+<details class="card" open><summary>🧱 Matières et épaisseurs <span class="mut" id="sm1"></span></summary>
+<div class="mat"><span class="mt">Corps du caisson</span><div class="mrow"><label>Matière<select id="matC"><option value="Mélaminé Blanc">Mélaminé Blanc</option><option value="Mélaminé Décor Bois">Mélaminé Décor Bois</option><option value="MDF / Medium">MDF / Medium</option><option value="Contreplaqué Multiplis">Contreplaqué / Multiplis</option><option value="Bois Massif Chêne/Pin">Bois massif (chêne / pin)</option></select></label><label>Ép. (mm)<input id="t" type="number" inputmode="decimal" value="18"></label></div><label class="ck"><input type="checkbox" id="doubleC"> Doubler les panneaux (2 × épaisseur)</label></div>
+<div class="mat"><span class="mt">Intérieur (cloisons, étagères)</span><div class="mrow"><label>Matière<select id="matI"><option value="Mélaminé Blanc">Mélaminé Blanc</option><option value="Mélaminé Décor Bois">Mélaminé Décor Bois</option><option value="MDF / Medium">MDF / Medium</option><option value="Contreplaqué Multiplis">Contreplaqué / Multiplis</option><option value="Bois Massif Chêne/Pin">Bois massif (chêne / pin)</option></select></label><label>Ép. (mm)<input id="tInt" type="number" inputmode="decimal" value="18"></label></div></div>
+<div class="mat"><span class="mt">Portes et façades</span><div class="mrow"><label>Matière<select id="matP"><option value="Mélaminé Blanc">Mélaminé Blanc</option><option value="Mélaminé Décor Bois">Mélaminé Décor Bois</option><option value="MDF / Medium">MDF / Medium</option><option value="Contreplaqué Multiplis">Contreplaqué / Multiplis</option><option value="Bois Massif Chêne/Pin">Bois massif (chêne / pin)</option></select></label><label>Ép. (mm)<input id="tP" type="number" inputmode="decimal" value="18"></label></div><label class="ck"><input type="checkbox" id="doubleP"> Doubler les portes / façades (2 × épaisseur)</label></div>
+<div class="mat"><span class="mt">Tiroirs</span><div class="mrow"><label>Matière<select id="matTr"><option value="Mélaminé Blanc">Mélaminé Blanc</option><option value="Mélaminé Décor Bois">Mélaminé Décor Bois</option><option value="MDF / Medium">MDF / Medium</option><option value="Contreplaqué Multiplis">Contreplaqué / Multiplis</option><option value="Bois Massif Chêne/Pin">Bois massif (chêne / pin)</option></select></label><label>Ép. (mm)<input id="tTr" type="number" inputmode="decimal" value="12"></label></div></div>
+</details>
+
+<div>
+<details class="card" open><summary>🔩 Assemblage et fixation <span class="mut" id="sm2"></span></summary><div class="g">
+<label class="w2">Assemblage des angles<select id="j"><option value="A">90° — dessus/dessous couvrent les côtés</option><option value="B">90° — côtés couvrent dessus/dessous</option><option value="C">45° — onglets (lamelles)</option></select></label>
+<label>Fond<select id="b"><option value="A">Appliqué</option><option value="N">Sans</option></select></label>
+<label>Épaisseur du fond (mm)<input id="tb" type="number" inputmode="decimal" value="3"></label>
+<label class="w2">Fixation<select id="fx"><option value="Z">Lamello Zeta P2 (connecteurs P-System)</option><option value="V">Vis</option></select></label>
+<label>Marge au bout (mm)<input id="mg" type="number" inputmode="decimal" value="60"></label>
+<label>Entraxe max (mm)<input id="es" type="number" inputmode="decimal" value="300"></label>
+</div></details>
+
+<details class="card"><summary>📐 Panneaux bruts et débit <span class="mut" id="sm3"></span></summary><div class="g">
+<label>Longueur du panneau, sens du fil (mm)<input id="SL" type="number" inputmode="decimal" value="2400"></label>
+<label>Largeur du panneau (mm)<input id="SW" type="number" inputmode="decimal" value="1200"></label>
+<label>Trait de scie (mm)<input id="k" type="number" inputmode="decimal" value="3"></label>
+<label>Parage des bords (mm)<input id="trim" type="number" inputmode="decimal" value="0"></label>
+<label>Essais d’optimisation<input id="nTries" type="number" inputmode="numeric" value="150"></label>
+<label class="ck w2"><input type="checkbox" id="rot" checked> Rotation autorisée au calepinage (décor sans sens du fil)</label>
+</div></details>
+
+<details class="card"><summary>↔️ Jeux de fonctionnement <span class="mut" id="sm4"></span></summary><div class="g">
+<label>Tiroir : jeu latéral (mm)<input id="jlat" type="number" inputmode="decimal" value="12"></label>
+<label>Tiroir : jeu dessus/dessous (mm)<input id="jvd" type="number" inputmode="decimal" value="5"></label>
+<label>Portes : jeu mini d’ouverture (mm)<input id="jg" type="number" inputmode="decimal" value="2"></label>
+</div></details>
+</div>
+</div>
+
+<div class="actions">
+<button class="bt" onclick="saveModuleToLibrary(false)">💾 Enregistrer comme nouveau module</button><button class="bt bt-sec btnUp" hidden onclick="saveModuleToLibrary(true)">♻️ Mettre à jour le module chargé</button>
+</div>
+
+</section>
+
+<section id="s4" hidden>
+<div class="card hero"><h3 style="margin-top:0">🧩 Aménagement du module <span class="mut" id="amSum"></span></h3>
+<p class="mut">1) Divisez le module en cases · 2) Touchez une case sur le schéma · 3) Équipez-la : planches, tiroirs, tringle, portes.</p></div>
+<div class="comp-workspace">
+  <div class="schem-container"><div class="btnrow noprint" style="margin:0 0 8px"><button class="bt bt-sec" id="btnMulti" onclick="toggleMulti()">☑️ Sélection multiple : non</button><button class="bt bt-sec" onclick="selAll()">Toutes les cases</button><button class="bt bt-sec" onclick="selClear()">Tout désélectionner</button></div>
+  <div class="breadcrumb" id="bc"></div><svg id="sch" class="fs"></svg><p class="mut" style="margin:6px 0 0">Touchez une case pour la sélectionner (contour orange).</p></div>
+  <div>
+    <div id="alertSep"></div>
+    <div class="card" style="border:2px solid var(--pri)"><h3 style="margin-top:0">📐 Nombre de divisions</h3>
+      <div class="btnrow" style="margin:0 0 10px"><button class="bt bt-sec" id="btnUndo" onclick="undoAction()" disabled>↩️ Annuler</button><button class="bt bt-sec" id="btnRedo" onclick="redoAction()" disabled>↪️ Rétablir</button><button class="bt bt-danger" onclick="resetCaisson()">🔄 Réinitialiser</button></div>
+      <p class="mut" style="margin:0 0 6px">Diviser la zone sélectionnée en grille :</p>
+      <div class="g"><label>Colonnes en largeur (X)<input id="ed_cols" type="number" min="1" max="10" value="2"></label><label>Lignes en hauteur (Y)<input id="ed_rows" type="number" min="1" max="10" value="1"></label></div>
+      <div class="btnrow"><button class="bt" onclick="applyCustomDivision('int')">📐 Diviser l’intérieur (planches)</button><button class="bt bt-sec" onclick="applyCustomDivision('mod')">▦ En modules (caissons)</button></div></div>
+    <div id="ed" class="card"></div>
+  </div>
+</div>
+<label class="ck noprint" id="syncBox" hidden style="padding:6px 0"><input type="checkbox" id="autoSync" checked> Appliquer automatiquement à l’armoire, au plan et à la 3D (module lié à la bibliothèque : <b id="syncName"></b>)</label>
+<div class="actions noprint"><button class="bt" onclick="saveModuleToLibrary(false)">💾 Enregistrer comme nouveau module</button><button class="bt bt-sec btnUp" hidden onclick="saveModuleToLibrary(true)">♻️ Mettre à jour le module chargé</button></div>
+</section>
+
+<section id="s5" hidden>
+<div class="card hero"><h3 style="margin-top:0">✂️ Séparation en modules <span class="mut" id="sepSum"></span></h3>
+<p class="mut" style="margin:0 0 6px">Quand un caisson dépasse les panneaux bruts, séparez-le en modules : choisissez une proposition automatique, ou cotez vous-même où vous séparez (cote X depuis la gauche, cote Z depuis le bas).</p>
+<p class="mut" style="margin:0">Panneau brut utilisé : <b id="sepPanel"></b> — modifiable dans l’onglet 1, « Panneaux bruts et débit ».</p></div>
+<div class="btnrow noprint" style="margin:0 0 10px"><button class="bt bt-sec undoB" onclick="undoAction()" disabled>↩️ Annuler</button><button class="bt bt-sec redoB" onclick="redoAction()" disabled>↪️ Rétablir</button></div>
+<div id="prop"></div>
+<div class="btnrow noprint"><button class="bt" onclick="document.querySelector('.tabs button[data-s=&quot;4&quot;]').click()">Passer à l’aménagement →</button></div>
+</section>
+
+<!-- SECTION 1 : COMPOSITION DE L'ARMOIRE AVEC LES MODULES DE LA BIBLIOTHEQUE -->
+<section id="s1" hidden>
+  <h2>Bibliothèque de modules enregistrés</h2>
+  <p class="mut">Sélectionnez un module de votre bibliothèque pour l'ajouter et l'accrocher sur la face d'un module existant.</p>
+  <div id="libList" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+
+  <h2>Armoire Globale & Assemblage par Faces</h2>
+  <div class="card">
+    <h3 style="margin-top:0">Ajouter / Accrocher un module</h3>
+    <div class="g">
+      <label>Module à placer<select id="asmTargetLib"></select></label>
+      <label>Accrocher par rapport au module existant<select id="asmAnchorMod">
+        <option value="-1">Premier module (Origine 0,0)</option>
+      </select></label>
+      <label>Face de collage / jonction<select id="asmFace">
+        <option value="right">À droite du module de référence (coller face droite)</option>
+        <option value="left">À gauche du module de référence (coller face gauche)</option>
+        <option value="top">Au-dessus du module de référence</option>
+      </select></label>
+      <label>Rotation du module (°)<select id="asmRot">
+        <option value="0">0° (Orientation normale)</option>
+        <option value="90">90° vers la droite</option>
+        <option value="180">180° (Retourné)</option>
+        <option value="270">270° vers la gauche</option>
+      </select></label>
+    </div>
+    <button class="bt" style="margin-top:10px" onclick="addModuleWithAnchor()">🔗 Placer et coller sur la face</button>
+  </div>
+  
+  <div class="comp-workspace">
+    <div class="schem-container">
+      <div class="breadcrumb">Disposition des modules connectés</div>
+      <svg id="sch-comp" class="fs"></svg>
+    </div>
+    <div class="card" style="margin-top:0">
+      <h3>Modules placés dans l'armoire</h3>
+      <div id="placedModulesList"></div>
+      <h3>Aperçu de face avec l’aménagement</h3><div id="armPrev"></div>
+      <button class="bt bt-danger" style="margin-top:10px" onclick="clearAssembly()">Vider l'armoire</button>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2 : VUE 3D -->
+<section id="s2" hidden><div class="card srcbar noprint" style="margin:0 0 10px"><div class="g"><label>Afficher<select class="srcSel" onchange="setSrc(this.value)"><option value="auto">Automatique (armoire si elle contient des modules)</option><option value="arm">Armoire assemblée</option><option value="mod">Module en cours de conception seul</option></select></label></div><p class="mut srcTxt" style="margin:6px 0 0"></p></div>
+<p id="src3d" class="mut" hidden></p><canvas id="cv"></canvas>
+<div class="noprint" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"><button class="bt bt-sec" onclick="vue(0,.05)">Face</button><button class="bt bt-sec" onclick="vue(-1.5708,.05)">Côté gauche</button><button class="bt bt-sec" onclick="vue(1.5708,.05)">Côté droit</button><button class="bt bt-sec" onclick="vue(3.1416,.05)">Arrière</button><button class="bt bt-sec" onclick="vue(0,1.35)">Dessus</button><button class="bt bt-sec" onclick="vue(.7,.4)">3/4</button></div>
+<div class="card noprint" style="margin:8px 0"><h3 style="margin-top:0">🚪 Ouvrir le meuble</h3><div class="g"><label>Portes (ouverture)<input type="range" id="opD" min="0" max="100" value="0"></label><label>Tiroirs (sortie)<input type="range" id="opT" min="0" max="100" value="0"></label></div><div class="btnrow"><button class="bt" onclick="openAll(1)">Tout ouvrir</button><button class="bt bt-sec" onclick="openAll(0)">Tout fermer</button></div></div>
+<label>Vue éclatée<input type="range" id="ex" min="0" max="100" value="0"></label>
+<p class="mut">Face = côté ouvert (portes), vue depuis la face : la gauche est la gauche quand on fait face au meuble. Glisser pour tourner, pincer ou molette pour zoomer.</p></section>
+
+<!-- SECTION 3 : PLAN & CALEPINAGE -->
+<section id="s3" hidden>
+<div class="card srcbar noprint" style="margin:0 0 10px"><div class="g"><label>Afficher<select class="srcSel" onchange="setSrc(this.value)"><option value="auto">Automatique (armoire si elle contient des modules)</option><option value="arm">Armoire assemblée</option><option value="mod">Module en cours de conception seul</option></select></label></div><p class="mut srcTxt" style="margin:6px 0 0"></p></div>
+<div id="planAlert"></div>
+<button class="bt noprint" onclick="prt()">Imprimer / enregistrer en PDF</button>
+<div id="cart"></div>
+<h2>Vues d’ensemble</h2><div id="ov" class="ov"></div>
+<h2>Plan d’assemblage</h2><div id="ex2"></div><ol id="asm"></ol>
+<div id="sum"></div>
+<h2>Nomenclature</h2><div class="sc"><table id="nomt"></table></div>
+<h2>Quincaillerie</h2><div class="sc"><table id="hwt"></table></div>
+<h2>Fiches de pièces (repérage unique par module et type)</h2><div id="fiches" class="fg"></div>
+<h2>Calepinage et schéma de coupe par matière et épaisseur</h2><button class="bt bt-sec noprint" onclick="reopt()">🔁 Chercher un meilleur calepinage</button><div id="plans"></div>
+</section>
+
+<div id="toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--pri);color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=i=>document.getElementById(i),R=Math.round,R1=x=>Math.round(x*10)/10;
+const mkcs=()=>({cs:true,t:'vide',p:0});
+let c,P=[],G=[],GM=[],ren,sc,cam,gr,az=.7,el=.4,zm=1,ctr=null,span=1000;
+let Library=[],AssemblyModules=[],T=mkcs(),sel=[],PR=[],WN=[],HJ=[],editing=null;
+
+function F(){const v=i=>+$(i).value,s=i=>$(i).value,ck=i=>$(i).checked,dc=ck('doubleC'),dp=ck('doubleP');
+  return{name:s('modName')||'Module',W:v('W'),H:v('H'),Hd:v('Hd'),obH:s('obH'),obq:s('obq'),Dg:v('Dg'),Dd:v('Dd'),t0:v('t'),t:dc?2*v('t'):v('t'),dc,tInt:v('tInt'),
+    t0P:v('tP'),tP:dp?2*v('tP'):v('tP'),dp,tTr:v('tTr'),matC:s('matC'),matI:s('matI'),matP:s('matP'),matTr:s('matTr'),
+    trap:ck('trapHoriz')&&$('sym').value==='A',sym:$('sym').value!=='A',fL:ck('fillerL'),fR:ck('fillerR'),fW:v('fillerW'),j:s('j'),b:s('b'),tb:v('tb'),
+    SL:v('SL'),SW:v('SW'),k:v('k'),jg:v('jg'),trim:v('trim')||0,tries:Math.max(0,Math.min(1000,$('nTries').value===''?150:+$('nTries').value)),rot:ck('rot'),fx:s('fx'),mg:v('mg'),es:v('es'),jlat:v('jlat'),jvd:v('jvd')}}
+const MAP={modName:'name',W:'W',H:'H',Hd:'Hd',obH:'obH',obq:'obq',Dg:'Dg',Dd:'Dd',t:'t0',tInt:'tInt',tP:'t0P',tTr:'tTr',matC:'matC',matI:'matI',matP:'matP',matTr:'matTr',doubleC:'dc',doubleP:'dp',trapHoriz:'trap',fillerL:'fL',fillerR:'fR',fillerW:'fW',j:'j',b:'b',tb:'tb',SL:'SL',SW:'SW',k:'k',jg:'jg',trim:'trim',nTries:'tries',rot:'rot',fx:'fx',mg:'mg',es:'es',jlat:'jlat',jvd:'jvd'};
+function loadForm(cf){for(const id in MAP){const e=$(id),v=cf[MAP[id]];if(v===undefined)continue;if(e.type==='checkbox')e.checked=!!v;else e.value=v}$('sym').value=cf.sym===false?'A':cf.sym===true?'S':((cf.Hd===undefined||cf.Hd===cf.H)&&cf.Dd===cf.Dg?'S':'A')}
+
+const pos=(a,b)=>{const L=b-a,m=Math.min(c.mg,L/4),n=Math.max(2,Math.ceil((L-2*m)/c.es)+1),r=[];for(let i=0;i<n;i++)r.push(a+m+(L-2*m)*i/(n-1));return r};
+function hl(Pm,ax,q,k){HJ.push(q);for(const p of Pm){
+  if(p.til){const T=p.til;if(q[1]<T.y0-.01||q[1]>T.y1+.01)continue;const v=q[1]-T.y0,fv=c.fx==='V'&&k==='t';
+    if(ax===2){if(q[0]>=T.x0-.01&&q[0]<=T.x1+.01){const zl=T.za+(q[0]-T.x0)*T.tn,zu=zl+p.th/T.cs;
+      if(Math.min(Math.abs(q[2]-zl),Math.abs(q[2]-zu))<3)p.h.push(fv?{k:'f',u:(q[0]-T.x0)/T.cs,v,d:5}:{k:'q',u:(q[0]-T.x0)/T.cs,v,a:'v'})}}
+    else{const w=ax===-1?.6*p.th:.5,e=Math.abs(q[0]-T.x0)<w?'g':Math.abs(q[0]-T.x1)<w?'d':null;
+      if(e){const zl=T.za+(q[0]-T.x0)*T.tn;if(q[2]>=zl-.5&&q[2]<=zl+p.th/T.cs+.5)p.h.push({k:fv?'v':'p',e,pos:v})}}
+    continue}
+  if(p.a<0||![0,1,2].every(i=>q[i]>=p.min[i]-.01&&q[i]<=p.min[i]+p.size[i]+.01))continue;
+  const u=q[p.ua]-p.min[p.ua],v=q[p.va]-p.min[p.va],sc=c.fx==='V'&&k==='t';
+  if(k==='t'&&ax===p.a)p.h.push(sc?{k:'f',u,v,d:5}:{k:'q',u,v,a:p.ua===1?'u':'v'});
+  else{const d=[u,p.L-u,v,p.l-v],i=d.indexOf(Math.min(...d));p.h.push({k:sc?'v':'p',e:'gdhb'[i],pos:i<2?v:u})}}}
+
+const node=p=>p.reduce((n,i)=>n.k&&n.k[i]?n.k[i]:n,T);
+function grid(a,b){const row=()=>a>1?{m:true,d:'v',k:Array.from({length:a},mkcs)}:mkcs();return b>1?{m:true,d:'h',k:Array.from({length:b},row)}:row()}
+function lay(n,x,z,w,h,pt){
+  n.r={x,z,w,h};n.pt=pt;
+  if(n.cs){const t=c.t;n.i={x:x+t,z:z+t,w:w-2*t,h:h-2*t};x+=t;z+=t;w-=2*t;h-=2*t}
+  if(!n.k)return;
+  const gap=n.m?0:c.tInt,V=n.d==='v',K=n.k.length,av=(V?w:h)-(K-1)*gap;
+  const fx=n.k.map(q=>q.s||0),nf=fx.filter(s=>!s).length,sm=fx.reduce((a,b)=>a+b,0);
+  const sz=fx.map(s=>R1(s||(av-sm)/Math.max(nf,1)));
+  sz[K-1]=R1(av-sz.slice(0,K-1).reduce((a,b)=>a+b,0));
+  if(sz.some(s=>s<=0))WN.push('Tailles incohérentes : une case a une dimension nulle ou négative.');
+  let q=V?x:z+h;
+  n.k.forEach((ch,i)=>{const s=sz[i];
+    if(V){lay(ch,q,z,s,h,pt.concat(i));q=R1(q+s+gap)}
+    else{lay(ch,x,R1(q-s),w,s,pt.concat(i));q=R1(q-s-gap)}});
+}
+
+/* ---------- Fabrication d'un module : toutes les pièces, en repère local du module ---------- */
+function buildModule(cf,tree){
+  const sv=c;c=cf;
+  const {W,Dg,Dd,t,tInt,tP,tTr,matC,matI,matP,matTr,j,b,tb,trap,fL,fR,fW}=cf,Hg=cf.H,Hd=cf.Hd||cf.H,Hm=Math.max(Hg,Hd),Dm=Math.max(Dg,Dd),Pm=[],HW=[],ROD=[],h0=HJ.length;
+  const sloped=Math.abs(Hg-Hd)>.5,obT=cf.obH!=='bas',av=trap&&cf.obq==='avant'&&Math.abs(Dg-Dd)>.5;
+  const dep=x=>Dg+(Dd-Dg)*x/W,hh=x=>Hg+(Hd-Hg)*x/W,cO={bt:cf.t0,mult:cf.dc?2:1},pO={bt:cf.t0P,mult:cf.dp?2:1,mat:matP};
+  const bevel=Math.round(Math.abs(Math.atan((Hd-Hg)/W))*1800/Math.PI)/10;
+  lay(tree,0,0,W,Hm,[]);
+  const cs=[];(function f(n){if(n.cs)cs.push(n);else if(n.k)n.k.forEach(f)})(tree);
+  if(cf.fx==='V'&&j==='C')WN.push('Onglet : la fixation par vis ne convient pas, connecteurs Zeta P2 utilisés.');
+  if(sloped&&av)WN.push('Hauteurs et profondeurs obliques combinées : vérifier les portes et le fond sur plan.');
+  const add=(name,min,size,f,cut,note,o)=>{o=o||{};
+    const a=size.indexOf(Math.min(...size)),ax=[0,1,2].filter(i=>i!==a).sort((x,y)=>size[y]-size[x]);
+    const q={name,min,size,f:f||'',cut:cut||'90°',note:note||'',h:[],a,ua:ax[0],va:ax[1],L:size[ax[0]],l:size[ax[1]],t:size[a],th:o.th||size[a],
+      bt:o.bt||size[a],mult:o.mult||1,mat:o.mat||matC,poly:o.poly||null,obl:null,til:null,v:o.v||null};
+    if(o.L){q.L=o.L;q.l=o.l;q.a=-1;q.t=o.bt;if(o.pl)q.pl=o.pl}
+    if(q.poly)q.pl=q.poly.map(pt=>[pt[q.ua]-min[q.ua],pt[q.va]-min[q.va]]);
+    Pm.push(q);return q};
+  /* panneau vertical entre x0 et x1, bornes zb/zt, plan avant yf (droit ou oblique), épaisseur th vers l'arrière */
+  const vp=(nm,x0,x1,zb,zt,yf,th,note,o)=>{o={...(o||{}),th};
+    const zlo=Math.min(zb(x0),zb(x1)),zhi=Math.max(zt(x0),zt(x1)),Hh=zhi-zlo,dy=yf(x1)-yf(x0),vs=Math.abs(zb(x1)-zb(x0))>.5||Math.abs(zt(x1)-zt(x0))>.5;
+    if(Math.abs(dy)<.5){const y0=yf(x0),q=add(nm,[x0,y0,zlo],[x1-x0,th,Hh],'',0,note,{...o,poly:vs?[[x0,y0,zb(x0)],[x1,y0,zb(x1)],[x1,y0,zt(x1)],[x0,y0,zt(x0)]]:null});
+      q.W2=x1-x0;q.pt=(wx,hz)=>q.ua===2?{u:Hh-hz,v:wx}:{u:wx,v:Hh-hz};return q}
+    const len=Math.hypot(x1-x0,dy),ang=Math.atan2(dy,x1-x0),sw=Hh>len,pts=[[0,zhi-zb(x0)],[len,zhi-zb(x1)],[len,zhi-zt(x1)],[0,zhi-zt(x0)]];
+    const q=add(nm,[x0,Math.min(yf(x0),yf(x1)),zlo],[x1-x0,Math.abs(dy)+th,Hh],'',0,note,{...o,L:Math.max(len,Hh),l:Math.min(len,Hh),pl:pts.map(a=>sw?[a[1],a[0]]:a)});
+    q.obl={ang,x0,y0:yf(x0),zhi,th,pts};q.W2=len;q.pt=(wx,hz)=>sw?{u:hz,v:wx}:{u:wx,v:hz};return q};
+  cs.forEach((n,ci)=>{
+    const pre=cs.length>1?'C'+(ci+1)+' · ':'',{x:ox,z:oz,w:Wc,h:Hc}=n.r,iw=Wc-2*t;
+    const dL=dep(ox),dR=dep(ox+Wc),dm=Math.min(dL,dR);
+    const FY=x=>av?Dm-dep(x):0,BY=x=>av?Dm:(trap?dep(x):dm);
+    const tc=sloped&&obT&&oz+Hc>=Hm-.01,bc=sloped&&!obT&&oz<=.01;
+    const ZT=x=>tc?hh(x):oz+Hc,ZB=x=>bc?Hm-hh(x):oz;
+    if(Math.min(ZT(ox),ZT(ox+Wc))-Math.max(ZB(ox),ZB(ox+Wc))<2*t+20||Wc<2*t+20){WN.push('Un caisson sort du volume oblique ou est trop petit : ignoré.');return}
+    const side=(nm,x,xs,dsb,full,ct)=>{const y0=FY(xs),y1=av?Dm:dsb,zb=ZB(xs)+(full?0:t),zt=ZT(xs)-(full?0:t),bv=tc||bc;
+      add(pre+nm,[x,y0,zb],[t,y1-y0,zt-zb],full?'':'H − 2×'+t+' = '+R(zt-zb),ct||(bv?'biseau '+bevel+'°':0),'Profondeur '+R(y1-y0)+' mm'+(bv?' · biseau de '+bevel+'° sur le chant '+(tc?'haut':'bas'):''),cO)};
+    const hp=(nm,x0,x1,z,cut,f)=>{const fa=FY(x0),fb=FY(x1),ba=BY(x0),bb=BY(x1),y0=Math.min(fa,fb),y1=Math.max(ba,bb),sk=trap&&(Math.abs(fa-fb)>.5||Math.abs(ba-bb)>.5);
+      return add(pre+nm,[x0,y0,z],[x1-x0,y1-y0,t],f,cut,sk?'Trapèze : profondeur '+R(ba-fa)+' → '+R(bb-fb)+' mm':'Rectangulaire, profondeur '+R(y1-y0)+' mm',
+        {...cO,poly:sk?[[x0,fa],[x1,fb],[x1,bb],[x0,ba]]:null,v:cut==='45°'&&!sk?{min:[x0+t,y0,z],size:[x1-x0-2*t,y1-y0,t]}:null})};
+    const til=(nm,x0,x1,top,cut,f)=>{const zf=top?ZT:ZB,ang=Math.atan2(zf(x1)-zf(x0),x1-x0),cs2=Math.cos(ang),tn=Math.tan(ang),len=(x1-x0)/cs2,za=top?zf(x0)-t/cs2:zf(x0);
+      const ya=Math.min(FY(x0),FY(x1)),yb=Math.max(BY(x0),BY(x1)),zA=za,zB=za+(x1-x0)*tn,zmin=Math.min(zA,zB),zmax=Math.max(zA,zB)+t/cs2;
+      const pl=[[0,FY(x0)-ya],[len,FY(x1)-ya],[len,BY(x1)-ya],[0,BY(x0)-ya]];
+      const q=add(pre+nm,[x0,ya,zmin],[x1-x0,yb-ya,zmax-zmin],f,cut||('bouts à '+bevel+'°'),'Panneau incliné de '+bevel+'° (longueur '+R(len)+' mm)',{...cO,th:t,L:len,l:yb-ya,pl});
+      q.til={x0,x1,y0:ya,y1:yb,za,tn,cs:cs2,ang};return q};
+    const bot=(x0,x1,cut,f)=>bc?til('Dessous',x0,x1,false,cut,f):hp('Dessous',x0,x1,oz,cut,f);
+    const top=(x0,x1,cut,f)=>tc?til('Dessus',x0,x1,true,cut,f):hp('Dessus',x0,x1,oz+Hc-t,cut,f);
+    if(j==='A'){
+      side('Côté gauche',ox,ox+t/2,dL,false);side('Côté droit',ox+Wc-t,ox+Wc-t/2,dR,false);
+      bot(ox,ox+Wc);top(ox,ox+Wc);
+      for(const x of[ox+t/2,ox+Wc-t/2])for(const y of pos(FY(x),BY(x)))for(const z of[ZB(x)+t,ZT(x)-t])hl(Pm,2,[x,y,z],'t');
+    }else if(j==='B'){
+      side('Côté gauche',ox,ox+t/2,dL,true);side('Côté droit',ox+Wc-t,ox+Wc-t/2,dR,true);
+      bot(ox+t,ox+Wc-t,0,'L − 2×'+t+' = '+R(iw));top(ox+t,ox+Wc-t,0,'L − 2×'+t+' = '+R(iw));
+      for(const x of[ox+t,ox+Wc-t])for(const y of pos(FY(x),BY(x)))for(const z of[ZB(x)+t/2,ZT(x)-t/2])hl(Pm,0,[x,y,z],'t');
+    }else{
+      side('Côté gauche',ox,ox+t/2,dL,true,'45°');side('Côté droit',ox+Wc-t,ox+Wc-t/2,dR,true,'45°');
+      bot(ox,ox+Wc,'45°');top(ox,ox+Wc,'45°');
+      for(const x of[ox+t/2,ox+Wc-t/2])for(const y of pos(FY(x),BY(x)))for(const z of[ZB(x)+t/2,ZT(x)-t/2])hl(Pm,-1,[x,y,z],'l');
+    }
+    if(b==='A'){const ob=!av&&trap&&Math.abs(dR-dL)>.5,yf=ob?dep:()=>(av?Dm:dm);
+      vp(pre+'Fond',ox,ox+Wc,ZB,ZT,yf,tb,ob?'Fond oblique (suit les deux profondeurs)':'Fond appliqué',{bt:tb,mat:matC})}
+    const drw=(r)=>{const mk0=Pm.length;const xa=r.x,xb=r.x+r.w,zbase=Math.max(r.z,ZB(xa)+t,ZB(xb)+t),ztop=Math.min(r.z+r.h,ZT(xa)-t,ZT(xb)-t),bw=r.w-2*cf.jlat,bh=ztop-zbase-2*cf.jvd,
+        y0=Math.max(FY(xa),FY(xb))+tP,ymax=Math.min(BY(xa),BY(xb))-10,bd=Math.max(150,Math.floor((ymax-y0)/50)*50),x=r.x+cf.jlat,z=zbase+cf.jvd;
+      if(bw<100||bh<50){WN.push('Case trop petite pour un tiroir ('+R(r.w)+' × '+R(r.h)+' mm).');return}
+      vp(pre+'Façade tiroir',xa+2,xb-2,u=>Math.max(r.z+2,ZB(u)+t+2),u=>Math.min(r.z+r.h-2,ZT(u)-t-2),FY,tP,'Rainure de fond 5 mm à 10 mm du bas. Poignée à prévoir.',pO);
+      const cn='Coulisses à billes '+bd+' mm. Rainure de fond 5 mm.',mo={bt:tTr,mat:matTr};
+      add(pre+'Côté tiroir',[x,y0,z],[tTr,bd,bh],'Longueur = coulisse','—',cn,mo);
+      add(pre+'Côté tiroir',[x+bw-tTr,y0,z],[tTr,bd,bh],'Longueur = coulisse','—',cn,mo);
+      add(pre+'Arrière tiroir',[x+tTr,y0+bd-tTr,z],[bw-2*tTr,tTr,bh-15],'L − 2×'+tTr+' = '+R(bw-2*tTr),'—','',mo);
+      add(pre+'Fond tiroir',[x+tTr-5,y0,z+8],[bw-2*tTr+10,bd-tTr+5,5],'L + 2×5 (rainures) = '+R(bw-2*tTr+10),'—','Fond 5 mm engagé dans les rainures.',{bt:5,mat:matTr});HW.push({k:'Coulisses à billes '+bd+' mm (la paire)',q:1});for(let i=mk0;i<Pm.length;i++)Pm[i].dwr={d:bd*.7}};
+    const dor=(q,r)=>{const k=q.p,ov=q.pm==='ov',jg=cf.jg>=0?cf.jg:2,DL=[];
+      (function w(z){if(z.p)DL.push({q:z,r:z.cs?z.i:z.r});if(z.k)z.k.forEach(w)})(n);
+      const ii=n.i,ol=r.x-ii.x<.6,orr=ii.x+ii.w-(r.x+r.w)<.6,ob=r.z-ii.z<.6,ot=ii.z+ii.h-(r.z+r.h)<.6;
+      const vo=(a,b)=>Math.min(a.z+a.h,b.z+b.h)-Math.max(a.z,b.z)>10,ho=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>10;
+      const nb=s=>DL.some(D=>D.q!==q&&D.q.pm==='ov'&&(s==='L'?Math.abs(D.r.x+D.r.w+tInt-r.x)<.6&&vo(D.r,r):s==='R'?Math.abs(r.x+r.w+tInt-D.r.x)<.6&&vo(D.r,r):s==='B'?Math.abs(D.r.z+D.r.h+tInt-r.z)<.6&&ho(D.r,r):Math.abs(r.z+r.h+tInt-D.r.z)<.6&&ho(D.r,r)));
+      let xL,xR,zb,zt;
+      if(ov){xL=ol?r.x:nb('L')?r.x-tInt/2+jg/2:r.x-tInt;xR=orr?r.x+r.w:nb('R')?r.x+r.w+tInt/2-jg/2:r.x+r.w+tInt;
+        zb=ob?u=>ZB(u)+jg/2:nb('B')?()=>r.z-tInt/2+jg/2:()=>r.z-tInt;zt=ot?u=>ZT(u)-jg/2:nb('T')?()=>r.z+r.h+tInt/2-jg/2:()=>r.z+r.h+tInt}
+      else{xL=r.x+jg;xR=r.x+r.w-jg;zb=u=>Math.max(r.z+jg,ZB(u)+t+jg);zt=u=>Math.min(r.z+r.h-jg,ZT(u)-t-jg)}
+      const ww=(xR-xL-(k-1)*jg)/k,yf=ov?u=>FY(u)-tP:FY;
+      for(let i=0;i<k;i++){const xa=R1(xL+i*(ww+jg)),xb=R1(xa+ww);
+        if(Math.min(zt(xa)-zb(xa),zt(xb)-zb(xb))<210){WN.push('Case trop basse pour une porte.');return}
+        const Hh=Math.max(zt(xa),zt(xb))-Math.min(zb(xa),zb(xb)),nh=Math.max(2,Math.ceil((Hh-400)/800)+1),e0=Math.min(200,Hh/4);
+        const d=vp(pre+(k==1?'Porte':i?'Porte droite':'Porte gauche'),xa,xb,zb,zt,yf,tP,(ov?'Pose en recouvrement (couvre la tranche du caisson). ':'Pose rentrante. ')+'Charnières : '+nh+' cuvettes Ø35 à 22 mm du bord ; 1re et dernière à '+R(e0)+' mm du bord de porte, entraxe max 800 mm.',pO);
+        d.dr={h:(k==2&&i==1)?'R':'L',px:(k==2&&i==1)?xb:xa,pz:yf((k==2&&i==1)?xb:xa)+tP/2};for(let e=0;e<nh;e++){const hz=e0+e*(Hh-2*e0)/(nh-1),wx=(k==2&&i==1)?d.W2-22:22;d.h.push({k:'f',...d.pt(wx,hz),d:35})}HW.push({k:'Charnière à cuvette Ø35 ('+(ov?'recouvrement':'rentrante')+')',q:nh})}};
+    const rod=(r,q)=>{const d=q.rd||25,hd=q.rh>=0?q.rh:50,xa=r.x,xb=r.x+r.w,ztop=Math.min(r.z+r.h,ZT(xa)-t,ZT(xb)-t),zax=ztop-hd-d/2,L=R1(r.w-4);
+      if(zax<Math.max(r.z,ZB(xa)+t,ZB(xb)+t)+d){WN.push('Tringle trop basse : case trop petite.');return}
+      const ym=(Math.max(FY(xa),FY(xb))+20+Math.min(BY(xa),BY(xb)))/2,ns=Math.max(0,Math.ceil(L/1000)-1);
+      ROD.push({x0:xa+2,x1:xb-2,y:ym,z:zax,d});HW.push({k:'Tringle Ø'+d+' mm',L,q:1});HW.push({k:'Support de tringle Ø'+d+' mm',q:2+ns})};
+    const inn=q=>{const r=q.cs?q.i:q.r;
+      if(q.k){q.k.forEach(inn);
+        for(let i=0;i<q.k.length-1;i++){const a=q.k[i].r;
+          if(q.d==='v'){const x=a.x+a.w,xc=x+tInt/2,y0=FY(xc)+20,y1=BY(xc),zlo=Math.max(r.z,ZB(xc)+t),zhi=Math.min(r.z+r.h,ZT(xc)-t);
+            if(zhi-zlo<30||y1-y0<30){WN.push('Une cloison sort du volume (plan oblique) : à repositionner.')}
+            else{add(pre+'Cloison',[x,y0,zlo],[tInt,y1-y0,zhi-zlo],'H = '+R(zhi-zlo),0,'Profondeur '+R(y1-y0)+' mm',{mat:matI});
+              for(const z of[zlo,zhi])for(const y of pos(y0,y1))hl(Pm,2,[xc,y,z],'t')}}
+          else{const z=a.z-tInt,xl=r.x,xr=r.x+r.w,fl=FY(xl)+20,fr=FY(xr)+20,bl=BY(xl),br=BY(xr),sk=trap&&(Math.abs(fl-fr)>.5||Math.abs(bl-br)>.5),y0=Math.min(fl,fr),y1=Math.max(bl,br);
+            if(z<ZB(xl)+t-.5||z<ZB(xr)+t-.5||z+tInt>ZT(xl)-t+.5||z+tInt>ZT(xr)-t+.5)WN.push('Une étagère dépasse le plan oblique : à repositionner.');
+            add(pre+'Étagère',[xl,y0,z],[r.w,y1-y0,tInt],'L = '+R(r.w),0,sk?'Trapèze : profondeur '+R(bl-fl)+' → '+R(br-fr)+' mm':'Rectangulaire',{mat:matI,poly:sk?[[xl,fl],[xr,fr],[xr,br],[xl,bl]]:null});
+            for(const[x,fy,by]of[[xl,fl,bl],[xr,fr,br]])for(const y of pos(fy,by))hl(Pm,0,[x,y,z+tInt/2],'t')}}}
+      else if(q.t==='tiroir')drw(r);else if(q.t==='tringle')rod(r,q);
+      if(q.p)dor(q,r)};
+    inn(n);
+  });
+  const zbm=x=>(sloped&&!obT)?Hm-hh(x):0,ztm=x=>(sloped&&obT)?hh(x):Hm;
+  const hasOv=q=>(q.p>0&&q.pm==='ov')||(q.k&&q.k.some(hasOv)),ovAny=hasOv(tree),FYm=x=>av?Dm-dep(x):0;
+  const fp=(nm,x0,x1,xe)=>{const zl=zbm(xe),zh=ztm(xe),q=vp(nm,x0,x1,()=>zl,()=>zh,u=>FYm(u)-(ovAny?tP:0),tP,'Aligné sur le plan des façades'+(ovAny?' (portes en recouvrement)':''),pO);q.f='Filler '+fW+' × '+R(zh-zl);return q};
+  if(fL&&fW>0)fp('Filler gauche',-fW,0,0);
+  if(fR&&fW>0)fp('Filler droit',W,W+fW,W);
+  cf.fy0=ovAny?-tP:0;
+  c=sv;
+  return{P:Pm,nj:HJ.length-h0,cf,hw:HW,rods:ROD};
+}
+
+/* ---------- Placement des modules (rotation autour de l'axe vertical) ---------- */
+function mtOf(cf,rot,x,z){const th=rot*Math.PI/180,co=Math.round(Math.cos(th)),si=Math.round(Math.sin(th));
+  const x0=cf.fL?-cf.fW:0,x1=cf.W+(cf.fR?cf.fW:0),dm=Math.max(cf.Dg,cf.Dd);
+  const y0=cf.fy0||0,cr=[[x0,y0],[x1,y0],[x1,dm],[x0,dm]].map(([a,b])=>[a*co-b*si,a*si+b*co]);
+  const mnx=Math.min(...cr.map(p=>p[0])),mny=Math.min(...cr.map(p=>p[1])),mxx=Math.max(...cr.map(p=>p[0])),mxy=Math.max(...cr.map(p=>p[1]));
+  return{th,co,si,X0:x-mnx,Y0:-mny,Z0:z,w:mxx-mnx,d:mxy-mny,h:Math.max(cf.H,cf.Hd||cf.H)}}
+let viewSrc='auto';
+const useArm=()=>viewSrc==='mod'?false:AssemblyModules.length>0;
+function setSrc(v){viewSrc=v;document.querySelectorAll('.srcSel').forEach(e=>e.value=v);refreshOut()}
+function enableRot(){$('rot').checked=true;upd();toast('Rotation autorisée au calepinage.')}
+function syncLink(){const box=$('syncBox'),ok=editing!==null&&Library[editing];box.hidden=!ok;if(!ok)return;
+  $('syncName').textContent=Library[editing].name;
+  if($('autoSync').checked){const cf=JSON.parse(JSON.stringify(c)),tr=JSON.parse(JSON.stringify(T));Library[editing]={name:c.name,config:cf,tree:tr};
+    AssemblyModules.forEach(a=>{if(a.modId===editing){const mt=mtOf(cf,a.rot,a.x,a.z);a.w=mt.w;a.h=mt.h;a.name=c.name+(a.rot?` (${a.rot}°)`:'')}});saveStore()}}
+function buildAll(){
+  HJ=[];GM=[];P=[];
+  const src=useArm()?AssemblyModules.map(a=>({cf:Library[a.modId].config,tr:Library[a.modId].tree,a})):[{cf:c,tr:T,a:{name:c.name,rot:0,x:0,z:0}}];
+  src.forEach((s,i)=>{const M=buildModule(s.cf,s.tr);M.letter=String.fromCharCode(65+i%26)+(i>=26?Math.floor(i/26):'');M.name=s.a.name;M.mt=mtOf(s.cf,s.a.rot,s.a.x,s.a.z);
+    M.P.forEach(p=>{p.M=i;p.letter=M.letter});GM.push(M);P.push(...M.P)});
+}
+function codes(){const m={},cnt={};G=[];
+  P.forEach(p=>{const sig=[p.letter,R(p.L),R(p.l),R(p.bt),p.mat,p.cut,p.pl?JSON.stringify(p.pl.map(a=>a.map(R))):'',JSON.stringify(p.h.map(h=>[h.k,h.e,R(h.u||0),R(h.v||0),R(h.pos||0),h.d||0])),p.mult].join('|');
+    if(!m[sig]){cnt[p.letter]=(cnt[p.letter]||0)+1;m[sig]={code:p.letter+'-'+cnt[p.letter],p,q:0,names:[]};G.push(m[sig])}
+    const g=m[sig];g.q+=p.mult;if(!g.names.includes(p.name))g.names.push(p.name);p.code=g.code})}
+
+/* ---------- Calepinage ---------- */
+let NSEED=1;
+const polyArea=pl=>{let a=0;for(let i=0;i<pl.length;i++){const p=pl[i],q=pl[(i+1)%pl.length];a+=p[0]*q[1]-q[0]*p[1]}return Math.abs(a)/2};
+/* appariement tête-bêche : une copie tournée de 180° s'emboîte le long d'un bord oblique */
+function mate(p){const pl=p.pl;if(!pl||pl.length!==4)return null;let best=null;
+  for(let i=0;i<4;i++){const A=pl[i],B=pl[(i+1)%4],sx=A[0]+B[0],sy=A[1]+B[1],
+      pts=pl.concat(pl.map(a=>[sx-a[0],sy-a[1]])),mnx=Math.min(...pts.map(a=>a[0])),mny=Math.min(...pts.map(a=>a[1])),
+      Wc=Math.max(...pts.map(a=>a[0]))-mnx,Hc=Math.max(...pts.map(a=>a[1]))-mny;
+    if(!best||Wc*Hc<best.Wc*best.Hc)best={Wc,Hc,m1:[1,0,0,1,-mnx,-mny],m2:[-1,0,0,-1,sx-mnx,sy-mny]}}
+  return best&&best.Wc*best.Hc<.92*2*p.L*p.l?best:null}
+function packOnce(items,st,c){const S=[],err=[],k=c.k,tr=c.trim||0,UW=c.SL-2*tr,UH=c.SW-2*tr;
+  for(const it of items){
+    let best=null;
+    for(const s of S)for(let i=0;i<s.free.length;i++){const r=s.free[i];
+      for(const rt of(c.rot?[0,1]:[0])){const w=rt?it.h:it.w,h=rt?it.w:it.h;
+        if(w<=r.w+.01&&h<=r.h+.01){const a=r.w-w,b=r.h-h,sc=st.h==='bssf'?Math.min(a,b)*1e6+Math.max(a,b):st.h==='blsf'?Math.max(a,b)*1e6+Math.min(a,b):r.w*r.h-w*h;
+          if(!best||sc<best.sc)best={s,i,r,rt,w,h,sc}}}}
+    if(!best){const f0=it.w<=UW&&it.h<=UH,f1=c.rot&&it.h<=UW&&it.w<=UH;
+      if(!f0&&!f1){err.push(it);continue}
+      const s={free:[{x:tr,y:tr,w:UW,h:UH}],items:[]};S.push(s);const rt=f0?0:1;
+      best={s,i:0,r:s.free[0],rt,w:rt?it.h:it.w,h:rt?it.w:it.h}}
+    const{s,i,r,rt,w,h}=best;s.items.push({it,x:r.x,y:r.y,rt,w,h});s.free.splice(i,1);
+    const rw=r.w-w-k,rh=r.h-h-k,aH={x:r.x+w+k,y:r.y,w:rw,h:h},bH={x:r.x,y:r.y+h+k,w:r.w,h:rh},aV={x:r.x+w+k,y:r.y,w:rw,h:r.h},bV={x:r.x,y:r.y+h+k,w:w,h:rh};
+    const ar=(a,b)=>Math.max(Math.max(a.w,0)*Math.max(a.h,0),Math.max(b.w,0)*Math.max(b.h,0));let horiz;
+    if(st.s==='sas')horiz=(r.w-w)<(r.h-h);else if(st.s==='las')horiz=!((r.w-w)<(r.h-h));else if(st.s==='mina')horiz=ar(aH,bH)<=ar(aV,bV);else horiz=ar(aH,bH)>ar(aV,bV);
+    const[A,B]=horiz?[aH,bH]:[aV,bV];if(A.w>5&&A.h>5)s.free.push(A);if(B.w>5&&B.h>5)s.free.push(B)}
+  return{S,err}}
+const bigFree=S=>{let m=0,rr=null;for(const s of S)for(const r of s.free)if(r.w*r.h>m){m=r.w*r.h;rr=r}return rr};
+function computeNesting(parts,c,tries){tries=tries===undefined?(c.tries>=0?c.tries:150):tries;
+  const groups={},out={},tr=c.trim||0,UW=c.SL-2*tr,UH=c.SW-2*tr,fits=(w,h)=>(w<=UW&&h<=UH)||(c.rot&&h<=UW&&w<=UH);
+  parts.forEach(p=>{const key=(p.mat||'Standard')+' — '+R1(p.bt)+'mm';(groups[key]=groups[key]||[]).push(p)});
+  const keys=[it=>-it.w*it.h,it=>-Math.max(it.w,it.h),it=>-it.w,it=>-it.h,it=>-(it.w+it.h),it=>-Math.min(it.w,it.h)],
+    strats=[];for(const h of['bssf','blsf','baf'])for(const sp of['sas','las','mina','maxa'])strats.push({h,s:sp});
+  for(const gKey in groups){
+    const raw=[];groups[gKey].forEach(p=>{p.sheets=[];for(let m=0;m<(p.mult||1);m++)raw.push({p,w:p.L,h:p.l})});
+    const items=[],bySig={};let pairs=0;
+    raw.forEach(it=>{if(it.p.pl&&it.p.pl.length===4){const sg=R(it.p.L)+'x'+R(it.p.l)+JSON.stringify(it.p.pl.map(a=>a.map(R)));(bySig[sg]=bySig[sg]||[]).push(it)}else items.push(it)});
+    for(const sg in bySig){const Ls=bySig[sg],mt=mate(Ls[0].p);let i=0;
+      if(mt&&fits(mt.Wc,mt.Hc))for(;i+1<Ls.length;i+=2){items.push({w:mt.Wc,h:mt.Hc,p:Ls[i].p,comp:[{p:Ls[i].p,m:mt.m1},{p:Ls[i+1].p,m:mt.m2}]});pairs++}
+      for(;i<Ls.length;i++)items.push(Ls[i])}
+    let bestR=null,bestSc=null,runs=0;
+    const run=(order,st)=>{runs++;const r=packOnce(order,st,c),sc=[r.err.length,r.S.length,-(bigFree(r.S)?bigFree(r.S).w*bigFree(r.S).h:0)];
+      if(!bestSc||sc[0]<bestSc[0]||(sc[0]===bestSc[0]&&(sc[1]<bestSc[1]||(sc[1]===bestSc[1]&&sc[2]<bestSc[2])))){bestR=r;bestSc=sc}};
+    if(tries===0)run([...items].sort((a,b)=>b.w*b.h-a.w*a.h),strats[0]);
+    else{keys.forEach(kf=>{const order=[...items].sort((a,b)=>kf(a)-kf(b));strats.forEach(st=>run(order,st))});
+      let sd=NSEED*7919+items.length;const rnd=()=>{sd=(sd*1103515245+12345)&0x7fffffff;return sd/0x7fffffff};
+      for(let t=0;t<tries;t++){const order=[...items].sort((a,b)=>b.w*b.h-a.w*a.h),sw=1+Math.floor(rnd()*Math.max(1,order.length/2));
+        for(let q=0;q<sw;q++){const i=Math.floor(rnd()*order.length),j=Math.floor(rnd()*order.length);[order[i],order[j]]=[order[j],order[i]]}
+        run(order,strats[Math.floor(rnd()*strats.length)])}}
+    const S=bestR.S;let area=0;
+    S.forEach((s,si)=>s.items.forEach(e=>{(e.it.comp||[{p:e.it.p}]).forEach(pt=>{pt.p.sheets.push(gKey+' n°'+(si+1));area+=pt.p.pl?polyArea(pt.p.pl):pt.p.L*pt.p.l})}));
+    out[gKey]={S,err:bestR.err.map(it=>it.p.name),errP:bestR.err.map(it=>it.p),area,runs,pairs,rem:bigFree(S)}}
+  return out}
+
+function shapeSVG(p){return p.pl?`<polygon class="pc" points="${p.pl.map(a=>R(a[0])+','+R(a[1])).join(' ')}"/><rect class="bb" width="${p.L}" height="${p.l}"/>`:`<rect class="pc" width="${p.L}" height="${p.l}"/>`}
+function hsvg(p,z){const lb=z<2;return p.h.map(h=>{
+  const L=p.L,l=p.l;
+  if(h.k==='f'||h.k==='q'){const u=R(h.u),v=R(h.v);
+    const sh=h.k==='q'?(h.a==='u'?`<rect x="${u-32}" y="${v-5}" width="64" height="10" class="hq"/>`:`<rect x="${u-5}" y="${v-32}" width="10" height="64" class="hq"/>`):`<circle cx="${u}" cy="${v}" r="${(h.d||8)/2*(z<2?1.2:2)}" class="hf"/>`;
+    return sh+(lb?`<text x="${u+12}" y="${v-10}" class="ht2">${u} ; ${v}</text>`:'')}
+  const q=R(h.pos),d=15*z;let sh;
+  if(h.k==='p'){const th=14;sh={g:`<rect x="0" y="${q-32}" width="${th}" height="64"`,d:`<rect x="${L-th}" y="${q-32}" width="${th}" height="64"`,h:`<rect x="${q-32}" y="0" width="64" height="${th}"`,b:`<rect x="${q-32}" y="${l-th}" width="64" height="${th}"`}[h.e]+' class="hp"/>'}
+  else{const[x1,y1,x2,y2]={g:[0,q,d,q],d:[L,q,L-d,q],h:[q,0,q,d],b:[q,l,q,l-d]}[h.e];sh=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="ht" stroke-width="${3*z}"/>`}
+  return sh+(lb?`<text x="${{g:d+8,d:L-d-8,h:q,b:q}[h.e]}" y="${{g:q+9,d:q+9,h:d+32,b:l-d-14}[h.e]}" class="ht2" text-anchor="${{g:'start',d:'end'}[h.e]||'middle'}">${q}</text>`:'')}).join('')}
+function planSVG(s){
+  let o=`<svg viewBox="-10 -10 ${c.SL+20} ${c.SW+20}" class="pl"><rect width="${c.SL}" height="${c.SW}" class="sh"/>`;
+  for(const e of s.items){const parts=e.it.comp||[{p:e.it.p,m:null}];let inner='',lab='';
+    parts.forEach(pt=>{const m=pt.m,p=pt.p;inner+=`<g${m?` transform="matrix(${m.join(' ')})"`:''}>${shapeSVG(p)}${hsvg(p,3)}</g>`;
+      const pl=p.pl||[[0,0],[p.L,0],[p.L,p.l],[0,p.l]];let gx=0,gy=0;pl.forEach(a=>{gx+=a[0];gy+=a[1]});gx/=pl.length;gy/=pl.length;
+      const X=m?m[0]*gx+m[2]*gy+m[4]:gx,Y=m?m[1]*gx+m[3]*gy+m[5]:gy;
+      lab+=`<text x="${R(e.rt?e.it.h-Y:X)}" y="${R(e.rt?X:Y)}" class="tn">${p.code}</text>`});
+    o+=`<g transform="translate(${e.x} ${e.y})"><g${e.rt?` transform="matrix(0 1 -1 0 ${e.it.h} 0)"`:''}>${inner}</g>${lab}<text x="${e.w/2}" y="${e.h-14}" class="td">${R(e.w)}×${R(e.h)}</text></g>`}
+  return o+'</svg>'}
+function ficheSVG(p){const m=80;
+  return `<svg viewBox="${-m} ${-m} ${p.L+2*m} ${p.l+2*m}" class="fs">${shapeSVG(p)}${hsvg(p,1.6)}${p.cut==='45°'?`<text x="40" y="-25" class="dm">45°</text><text x="${p.L-40}" y="-25" class="dm">45°</text>`:''}<text x="${p.L/2}" y="-25" class="dm">${R(p.L)}</text><text transform="translate(-25 ${p.l/2}) rotate(-90)" class="dm">${R(p.l)}</text></svg>`}
+function hlist(p){
+  const E={g:'chant gauche',d:'chant droit',h:'chant haut',b:'chant bas'},T2={p:'Clamex P-14 en chant (Zeta P2, prof. 14)',v:'Avant-trous Ø3, prof. 30 (vis)'},g={},f={},qs=[];
+  for(const h of p.h){
+    if(h.k==='f')(f[h.d||8]=f[h.d||8]||[]).push(`(${R(h.u)} ; ${R(h.v)})`);
+    else if(h.k==='q')qs.push(`(${R(h.u)} ; ${R(h.v)})`);
+    else{const key=T2[h.k]+' — '+E[h.e];(g[key]=g[key]||[]).push(R(h.pos))}}
+  let o='';
+  for(const d in f)o+=`<p><b>${d==35?'Cuvettes de charnière Ø35, prof. 12':'Perçages Ø'+d+' en face'}</b> (x ; y) : ${f[d].join(' · ')}</p>`;
+  if(qs.length)o+=`<p><b>Rainures P-10 en face (Zeta P2, prof. 10)</b> centres (x ; y) : ${qs.join(' · ')}</p>`;
+  for(const k in g)o+=`<p><b>${k}</b> à ${g[k].join(' · ')} mm</p>`;
+  if(qs.length||p.h.some(h=>h.k==='p'))o+='<p class="mut">Connecteur d’environ 64 mm, trou Ø6 au gabarit Clamex P. Positions à valider avec le configurateur P-System de Lamello.</p>';
+  return o||'<p class="mut">Aucun perçage.</p>'}
+
+/* ---------- Vues d'ensemble et plan d'assemblage ---------- */
+function wbox(p,M){const mt=M.mt,x0=p.min[0],x1=x0+p.size[0],y0=p.min[1],y1=y0+p.size[1];
+  const pts=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(([a,b])=>[a*mt.co-b*mt.si+mt.X0,a*mt.si+b*mt.co+mt.Y0]);
+  return{x0:Math.min(...pts.map(a=>a[0])),x1:Math.max(...pts.map(a=>a[0])),y0:Math.min(...pts.map(a=>a[1])),y1:Math.max(...pts.map(a=>a[1])),z0:p.min[2]+mt.Z0,z1:p.min[2]+p.size[2]+mt.Z0}}
+function ovSVG(v,e){e=e||0;let B=P.map(p=>({p,...wbox(p,GM[p.M])}));if(v)B=B.filter(b=>b.x1-b.x0>60);if(!B.length)return'';
+  const h0=v?'y0':'x0',h1=v?'y1':'x1',X0=Math.min(...B.map(b=>b[h0])),X1=Math.max(...B.map(b=>b[h1])),Z0=Math.min(...B.map(b=>b.z0)),Z1=Math.max(...B.map(b=>b.z1));
+  const W2=X1-X0,H2=Z1-Z0,m=90+e*Math.max(W2,H2)*.55,cx=(X0+X1)/2,cz=(Z0+Z1)/2;
+  let o=`<svg viewBox="${X0-m} ${-Z1-m} ${W2+2*m} ${H2+2*m}" class="fs">`;
+  B.sort((a,b)=>v?a.x0-b.x0:b.y0-a.y0).forEach(b=>{const w=b[h1]-b[h0],h=b.z1-b.z0,X=cx+((b[h0]+b[h1])/2-cx)*(1+e),Zc=cz+((b.z0+b.z1)/2-cz)*(1+e),T=b.p.til,mt=GM[b.p.M].mt;
+    if(T&&!v&&mt.th===0){const dx=X-(b.x0+b.x1)/2,dz=Zc-(b.z0+b.z1)/2,th=b.p.th/T.cs,ya=T.za+mt.Z0,xo=mt.X0,dd=(T.x1-T.x0)*T.tn;
+      const pts=[[T.x0+xo,ya],[T.x1+xo,ya+dd],[T.x1+xo,ya+dd+th],[T.x0+xo,ya+th]];
+      o+=`<polygon points="${pts.map(a=>R(a[0]+dx)+','+R(-(a[1]+dz))).join(' ')}" class="ob"/>`+`<text x="${X}" y="${-Zc+16}" class="hn">${b.p.code}</text>`}
+    else o+=`<rect x="${X-w/2}" y="${-Zc-h/2}" width="${w}" height="${h}" class="ob"/>`+(w>60&&h>60?`<text x="${X}" y="${-Zc+16}" class="hn">${b.p.code}</text>`:'')});
+  return o+`<text x="${cx}" y="${-Z1-m+55}" class="dm">${R(W2)}</text><text transform="translate(${X0-m+55} ${-cz}) rotate(-90)" class="dm">${R(H2)}</text><text x="${cx}" y="${-Z0+m-20}" class="dm">${e?'Vue éclatée de face':v?'Coupe verticale (face à gauche, fond à droite)':'Vue de face'}</text></svg>`}
+
+function asm(){const st=[];
+  const V0=GM[0].cf.fx==='V';
+  st.push(`<b>Débit et usinage</b> : scier selon le calepinage, plaquer les chants, puis usiner d’après les fiches (${V0?'perçages Ø5 en face, avant-trous Ø3 en chant':'rainures P-System à la Zeta P2, trou Ø6 au gabarit Clamex P'}).`);
+  GM.forEach(M=>{const V=M.cf.fx==='V',un=V?'vis':'connecteurs P-System',N=re=>[...new Set(M.P.filter(p=>re.test(p.name)).map(p=>p.code))].join(', '),
+    lab=GM.length>1?`<b>Module ${M.letter}</b> (${M.name}) : `:'',cl=N(/Cloison$/),et=N(/Étagère$/),fo=N(/Fond$/),ti=N(/tiroir$/),po=N(/Porte/),fi=N(/Filler/);
+    st.push(`${lab}assembler le <b>dessous</b> (n° ${N(/Dessous$/)}) et les <b>côtés</b> (n° ${N(/Côté (gauche|droit)$/)}). Compter ${M.nj} ${un} pour ce module, cloisons et étagères comprises.`);
+    if(cl||et)st.push(`${lab}monter ${cl?'les <b>cloisons</b> (n° '+cl+')':''}${cl&&et?' et ':''}${et?'les <b>étagères</b> (n° '+et+')':''}.`);
+    st.push(`${lab}poser le <b>dessus</b> (n° ${N(/Dessus$/)}) et serrer.`);
+    if(fo)st.push(`${lab}fixer le <b>fond</b> (n° ${fo})${M.P.some(p=>p.obl)?' : il est oblique, à poser du côté profond vers le côté peu profond':' par pointes ou vis'}.`);
+    if(ti)st.push(`${lab}assembler les <b>tiroirs</b> (n° ${ti}) et monter les coulisses.`);
+    if(po)st.push(`${lab}poser les <b>portes</b> (n° ${po}) et régler les charnières.`);
+    if(fi)st.push(`${lab}poser les <b>fillers</b> (n° ${fi}) alignés sur les façades.`)});
+  if(GM.length>1)st.push('<b>Positionner les modules</b> : '+GM.map((M,i)=>{const a=AssemblyModules[i];return `${M.letter} à X ${R(a.x)} / Z ${R(a.z)} mm, rotation ${a.rot}°`}).join(' ; ')+'. Solidariser par vis dans les côtés accolés.');
+  return st.map(x=>'<li>'+x+'</li>').join('')}
+function prt(){document.querySelector('.tabs button[data-s="3"]').click();setTimeout(()=>{try{window.print()}catch(e){toast('Impression bloquée ici : ouvrez la page dans le navigateur.')}},300)}
+
+function reopt(){NSEED++;refreshOut();toast('Nouvelle recherche de calepinage.')}
+function refreshOut(){
+  syncLink();buildAll();codes();
+  const dim=GM.map(M=>M.mt),X1=Math.max(...GM.map(M=>M.mt.X0+M.mt.w)),nm=GM.length>1?GM.length+' modules':GM[0].name;
+  $('cart').innerHTML=`<p><b>${nm}</b> · ${P.length} pièces, ${G.length} références uniques<br><span class="mut">${useArm()?'Source : armoire assemblée':'Source : module en cours de conception'} · ${new Date().toLocaleDateString('fr-BE')}</span></p>`;
+  const srcT=useArm()?'Affichage : armoire assemblée ('+GM.length+' module'+(GM.length>1?'s':'')+').'+(editing===null?' ⚠ Le module en cours n’est pas enregistré : il n’apparaît pas dans l’armoire.':''):'Affichage : module en cours de conception'+(AssemblyModules.length?' (l’armoire n’est pas affichée).':'.');
+  document.querySelectorAll('.srcTxt').forEach(e=>e.textContent=srcT);document.querySelectorAll('.srcSel').forEach(e=>e.value=viewSrc);
+  $('nomt').innerHTML='<tr><th>Code<th>Matière<th>L<th>l<th>Ép.<th>Qté<th>Pièce<th>Coupe</tr>'+G.map(g=>{const p=g.p;return `<tr><td><b>${g.code}</b><td>${p.mat}<td>${R(p.L)}<td>${R(p.l)}<td>${R1(p.bt)}${p.mult>1?' ×2 collés':''}<td>${g.q}<td>${g.names.join(', ')}<td>${p.cut}${p.pl?' · trapèze':''}`}).join('');
+  const hw={};GM.forEach(M=>{M.hw.forEach(h=>{const key=h.k+(h.L?' — L '+R(h.L)+' mm':'');hw[key]=(hw[key]||0)+h.q});
+    const key=M.cf.fx==='V'?'Vis d’assemblage (une par assemblage)':'Connecteurs Lamello P-System (Clamex P-14 / P-10)';hw[key]=(hw[key]||0)+M.nj});
+  $('hwt').innerHTML='<tr><th>Désignation<th>Qté</tr>'+Object.entries(hw).map(([k,v])=>`<tr><td>${k}<td>${v}`).join('');
+  $('ov').innerHTML=ovSVG(0)+ovSVG(1);$('ex2').innerHTML=ovSVG(0,.35);$('asm').innerHTML=asm();
+  const N=computeNesting(P,c);let ph='',er=[];
+  for(const k in N){const r=N[k],{S,err,area}=r;err.forEach(e=>er.push(e+' ('+k+')'));
+    ph+=`<div class="card"><h3>${k} — ${S.length} panneau${S.length>1?'x':''} · utilisation ${R(100*area/Math.max(1,S.length*c.SL*c.SW))} %</h3><p class="mut">Meilleure solution parmi ${r.runs} essais${r.pairs?` · ${r.pairs} paire${r.pairs>1?'s':''} de pièces obliques placée${r.pairs>1?'s':''} tête-bêche`:''}${r.rem?` · plus grande chute récupérable ${R(r.rem.w)} × ${R(r.rem.h)} mm`:''}</p>`+S.map((s,i)=>`<b>Panneau n°${i+1}</b>`+planSVG(s)).join('')+'</div>'}
+  $('plans').innerHTML=ph;
+  const miss={};for(const k in N)N[k].errP.forEach(q=>{const m=miss[q.code]=miss[q.code]||{p:q,n:0};m.n+=1});
+  const mk=Object.keys(miss),tot=mk.reduce((a,k)=>a+miss[k].n,0);
+  const hint=q=>{const a=Math.max(q.L,q.l),b=Math.min(q.L,q.l),tr=c.trim||0,UW=c.SL-2*tr,UH=c.SW-2*tr;
+    return (!c.rot&&q.l<=UW&&q.L<=UH)?'Autoriser la rotation (décor sans sens du fil)':'Panneau d’au moins '+R(a)+' × '+R(b)+' mm, ou séparer le caisson'};
+  $('planAlert').innerHTML=mk.length?`<div class="card" style="border:2px solid #e74c3c"><h3 style="margin-top:0;color:#c0392b">⚠ ${tot} pièce${tot>1?'s':''} absente${tot>1?'s':''} du calepinage : elles ne rentrent pas dans le panneau brut (${c.SL} × ${c.SW} mm${c.rot?'':', sens du fil imposé'})</h3><div class="sc"><table><tr><th>Code<th>Pièce<th>L × l (mm)<th>Qté<th>Piste</tr>${mk.map(k=>{const m=miss[k],q=m.p;return `<tr><td><b>${q.code}</b><td>${q.name}<td>${R(q.L)} × ${R(q.l)}<td>${m.n}<td>${hint(q)}`}).join('')}</table></div><div class="btnrow noprint">${!c.rot?'<button class="bt bt-sec" onclick="enableRot()">Autoriser la rotation</button>':''}<button class="bt" onclick="document.querySelector(\'.tabs button[data-s=&quot;5&quot;]\').click()">Séparer le module (1.1)</button></div></div>`:'';
+  G.forEach(g=>{g.placed=P.filter(q=>q.code===g.code).reduce((a,q)=>a+(q.sheets||[]).length,0)});
+  $('nomt').innerHTML='<tr><th>Code<th>Matière<th>L<th>l<th>Ép.<th>Qté<th>Calepinage<th>Pièce<th>Coupe</tr>'+G.map(g=>{const q=g.p;return `<tr><td><b>${g.code}</b><td>${q.mat}<td>${R(q.L)}<td>${R(q.l)}<td>${R1(q.bt)}${q.mult>1?' ×2 collés':''}<td>${g.q}<td>${g.placed>=g.q?'✓':`<span class="err">⚠ ${g.placed}/${g.q}</span>`}<td>${g.names.join(', ')}<td>${q.cut}${q.pl?' · trapèze':''}`}).join('');
+  if($('armPrev'))$('armPrev').innerHTML=useArm()?ovSVG(0):'<p class="mut">Ajoutez des modules à l’armoire (ou choisissez « Armoire assemblée » dans les onglets 4 et 5) pour voir ici l’aperçu avec l’aménagement.</p>';
+  $('sum').innerHTML=[...new Set(WN)].map(w=>`<p class="err">${w}</p>`).join('')+(er.length?`<p class="err">Ne rentre pas dans le panneau : ${er.join(', ')}</p>`:'');
+  $('fiches').innerHTML=G.map(g=>{const p=g.p,sh=[...new Set(P.filter(x=>x.code===g.code).flatMap(x=>x.sheets||[]))].join(', ');
+    return `<div class="card"><h3>${g.code} × ${g.q} — ${g.names.join(', ')}</h3><p class="mut">${R(p.L)} × ${R(p.l)} × ${R1(p.bt)} mm · ${p.mat}${p.mult>1?` · à contrecoller : 2 × ${R1(p.bt)} mm`:''}</p>${ficheSVG(p)}<p class="mut">Coupe : ${p.cut}${p.f?' · '+p.f:''}<br>Panneau de débit : ${sh||'<span class="err">⚠ hors format : ne rentre pas dans le panneau brut</span>'}</p>${p.pl?`<p>Contour (x ; y) : ${p.pl.map(a=>`(${R(a[0])} ; ${R(a[1])})`).join(' → ')}</p>`:''}${p.note?`<p>${p.note}</p>`:''}${hlist(p)}</div>`}).join('');
+  if(window.THREE&&ren)mk3();
+}
+
+/* ---------- Découpage automatique des caissons trop grands ---------- */
+const fitP=(a,b)=>{const L=Math.max(a,b),l=Math.min(a,b);return(L<=c.SL&&l<=c.SW)||(c.rot&&l<=c.SL&&L<=c.SW)};
+function cd(w,h){const t=c.t,D=Math.max(c.Dg,c.Dd),iw=w-2*t,ih=h-2*t,d=c.j==='A'?[[ih,D],[ih,D],[w,D],[w,D]]:c.j==='B'?[[h,D],[h,D],[iw,D],[iw,D]]:[[h,D],[h,D],[w,D],[w,D]];if(c.b==='A')d.push([w,h]);return d}
+const carcFit=(w,h)=>cd(w,h).every(x=>fitP(x[0],x[1]));
+function opts(w,h){
+  const eq=(a,b)=>({ws:Array(a).fill(R1(w/a)),hs:Array(b).fill(R1(h/b)),eq:true}),all=[];
+  for(let a=1;a<=8;a++)for(let b=1;b<=8;b++)if((a>1||b>1)&&carcFit(w/a,h/b))all.push([a,b]);
+  if(!all.length)return[];
+  const sim=o=>{const pcs=[];o.ws.forEach(x=>o.hs.forEach(y=>cd(x,y).forEach(d=>pcs.push({L:Math.max(...d),l:Math.min(...d),mat:'x',bt:1,name:'x',mult:1}))));
+    const r=computeNesting(pcs,c,0)['x — 1mm'];o.sh=r.S.length;o.ut=R(100*pcs.reduce((a,p)=>a+p.L*p.l,0)/(Math.max(1,r.S.length)*c.SL*c.SW));return o};
+  const out=[],add=(lab,o)=>{if(!o)return;const key=o.ws.join()+'/'+o.hs.join();if(out.some(q=>q.key===key))return;o.lab=lab;o.key=key;out.push(sim(o))};
+  const best=all.reduce((x,y)=>y[0]*y[1]<x[0]*x[1]||(y[0]*y[1]==x[0]*x[1]&&Math.max(...y)<Math.max(...x))?y:x);
+  add('Équilibré (moins de caissons)',eq(...best));
+  const col=all.find(q=>q[1]===1),row=all.find(q=>q[0]===1);
+  if(col)add('Côte à côte seulement',eq(col[0],1));
+  if(row)add('Empilés seulement',eq(1,row[1]));
+  let bs=null;all.forEach(q=>{const o=sim(eq(...q));if(!bs||o.sh<bs.sh||(o.sh==bs.sh&&o.ut>bs.ut))bs=o});
+  add('Moins de panneaux / de chutes',bs);
+  const b0=best[1],h0=h/b0;let wm=0;for(let x=Math.floor(w);x>=2*c.t+100;x-=10)if(carcFit(x,h0)){wm=x;break}
+  if(wm&&wm<w-1){const n=Math.floor(w/wm),r=R1(w-n*wm);if(r>=2*c.t+100)add('Grands caissons + un reste',{ws:[...Array(n).fill(wm),r],hs:Array(b0).fill(R1(h0)),eq:false})}
+  return out}
+const mini=(o,w,h)=>{let s=`<svg viewBox="-5 -5 ${w+10} ${h+10}" style="width:90px;height:auto;flex:none">`,y=0;o.hs.forEach(hh=>{let x=0;o.ws.forEach(ww=>{s+=`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" class="cw" style="stroke-width:${Math.max(w,h)/40}"/>`;x+=ww});y+=hh});return s+'</svg>'};
+function props(){PR=[];
+  (function f(n){if(n.cs){const fit=carcFit(n.r.w,n.r.h);PR.push({n,fit,o:fit?[]:opts(n.r.w,n.r.h)})}else if(n.k)n.k.forEach(f)})(T);
+  const over=PR.filter(q=>!q.fit).length,pl=over>1?'s':'';
+  $('sepSum').textContent=over?'— '+over+' caisson'+pl+' trop grand'+pl:'— tout rentre dans les panneaux';
+  $('tabSep').textContent='1.1 Séparation en modules'+(over?' ⚠':'');
+  $('alertSep').innerHTML=over?`<div class="card" style="border-color:#e74c3c"><p class="err" style="margin:0 0 6px">⚠ ${over} caisson${pl} dépasse${over>1?'nt':''} les panneaux bruts.</p><button class="bt" onclick="document.querySelector('.tabs button[data-s=&quot;5&quot;]').click()">Ouvrir la séparation en modules (1.1)</button></div>`:'';
+  $('sepPanel').textContent=c.SL+' × '+c.SW+' mm'+(c.rot?' (rotation autorisée)':' (sens du fil imposé)');
+  $('prop').innerHTML=PR.map((q,i)=>{const w=q.n.r.w,h=q.n.r.h;
+    return `<div class="card" style="border-color:${q.fit?'var(--bd)':'#e74c3c'}"><h3 style="margin-top:0">Caisson ${i+1} · ${R(w)} × ${R(h)} mm — ${q.fit?'<span style="color:#1a9a6a">✓ rentre dans les panneaux</span>':'<span class="err">✗ trop grand</span>'}</h3>
+    ${q.fit?'':(q.o.length?'<b>Propositions automatiques</b>'+q.o.map((o,k)=>`<div style="display:flex;gap:10px;align-items:center;margin:6px 0">${mini(o,w,h)}<div><b>${o.lab}</b><br><span class="mut">${o.ws.length} × ${o.hs.length} caissons (${[...new Set(o.ws)].join(' / ')} × ${[...new Set(o.hs)].join(' / ')} mm) · ${o.sh} panneau${o.sh>1?'x':''} · utilisation ${o.ut} %</span><br><button class="bt" onclick="ap(${i},${k})">Appliquer</button></div></div>`).join(''):'<p class="err">Aucun découpage automatique ne convient (profondeur ou épaisseur trop grandes).</p>')}
+    <details class="eqb" ${q.fit?'':'open'}><summary>✏️ Séparer avec mes propres cotes</summary>
+      <div class="g" style="margin-top:8px"><label>Séparations verticales : cotes X depuis la gauche (mm)<input id="ed_mx${i}" placeholder="ex. 1200, 2400" oninput="chkMan(${i})"></label><label>Séparations horizontales : cotes Z depuis le bas (mm)<input id="ed_mz${i}" placeholder="ex. 1000" oninput="chkMan(${i})"></label></div>
+      <div id="mp${i}"></div><button class="bt" onclick="apMan(${i})">Appliquer mes cotes</button>
+      <p class="mut" style="margin:10px 0 4px">Ou un nombre de modules égaux :</p>
+      <div class="g"><label>Colonnes (X)<input id="ed_cx${i}" type="number" min="1" max="10" value="2"></label><label>Lignes (Y)<input id="ed_cy${i}" type="number" min="1" max="10" value="1"></label></div>
+      <button class="bt bt-sec" onclick="apCount(${i})">Séparer en modules égaux</button></details>
+    <p class="mut">Le contenu intérieur du caisson séparé sera remis à zéro. Profondeur et hauteur retenues pour le contrôle : les plus grandes des deux côtés.</p></div>`}).join('')}
+function apCount(i){const q=PR[i],a=Math.max(1,Math.min(10,+$('ed_cx'+i).value|0)),b=Math.max(1,Math.min(10,+$('ed_cy'+i).value|0));
+  if(a*b<2){toast('Choisissez au moins 2 modules.');return}
+  applyGrid(q.n,{ws:Array(a).fill(R1(q.n.r.w/a)),hs:Array(b).fill(R1(q.n.r.h/b)),eq:true});toast('Séparé en '+a+' × '+b+' modules.')}
+function applyGrid(n,o){saveState();const g=grid(o.ws.length,o.hs.length),pp=n.pt;
+  if(!o.eq){const rows=g.m&&g.d==='h'?g.k:[g];rows.forEach((r,y)=>{if(o.hs.length>1)r.s=o.hs[y];const cols=r.m&&r.d==='v'?r.k:[r];cols.forEach((cc,x)=>{if(o.ws.length>1)cc.s=o.ws[x]})})}
+  if(n.s)g.s=n.s;
+  if(!pp.length)T=g;else node(pp.slice(0,-1)).k[pp[pp.length-1]]=g;sel=[];upd()}
+function ap(i,k){applyGrid(PR[i].n,PR[i].o[k])}
+function manSizes(i){const q=PR[i],w=q.n.r.w,h=q.n.r.h,cuts=(s,tot)=>s.split(/[;,\s]+/).map(Number).filter(x=>x>0&&x<tot).sort((a,b)=>a-b);
+  const bx=[0,...cuts($('ed_mx'+i).value,w),w],bz=[0,...cuts($('ed_mz'+i).value,h),h];
+  return{ws:bx.slice(1).map((x,k)=>R1(x-bx[k])),hs:bz.slice(1).map((z,k)=>R1(z-bz[k])).reverse()}}
+function chkMan(i){const{ws,hs}=manSizes(i);let ok=true;
+  const rows=hs.map(h=>ws.map(w=>{const f=carcFit(w,h);ok=ok&&f;return `${R(w)} × ${R(h)} ${f?'✓':'✗'}`}).join(' · '));
+  $('mp'+i).innerHTML='<p class="mut">'+rows.join('<br>')+'</p>'+(ok?'':'<p class="err">Au moins un caisson dépasse encore le panneau.</p>')}
+function apMan(i){const{ws,hs}=manSizes(i);if(ws.length*hs.length<2){toast('Indiquez au moins une cote de séparation.');return}
+  if(Math.min(...ws,...hs)<2*c.t+60){toast('Une séparation donne un caisson trop petit.');return}
+  applyGrid(PR[i].n,{ws,hs,eq:false})}
+
+/* ---------- Concepteur : schéma et édition des cases ---------- */
+function schem(){const W=c.W,H=Math.max(c.H,c.Hd),fs=Math.max(W,H)/26;let o='';
+  const cell=(n,r,p)=>{const y=H-r.z-r.h;let s=`<rect data-p="${p}" x="${r.x}" y="${y}" width="${r.w}" height="${r.h}" class="ci"/>`;
+    if(!n.k&&n.t==='tringle'){const yy=y+(n.rh>=0?n.rh:50)+(n.rd||25)/2;s+=`<line x1="${r.x+8}" y1="${yy}" x2="${r.x+r.w-8}" y2="${yy}" class="rodl"/>`}
+    if(!n.k&&n.t==='tiroir')s+=`<rect x="${r.x+6}" y="${y+6}" width="${r.w-12}" height="${r.h-12}" class="tr"/>`;
+    if(n.p)s+=`<rect x="${r.x+10}" y="${y+10}" width="${r.w-20}" height="${r.h-20}" class="dr"/>`;
+    if(!n.k)s+=`<text x="${r.x+r.w/2}" y="${y+r.h/2+fs/3}" font-size="${fs}" class="tx">${n.t==='tiroir'?'Tiroir':n.t==='tringle'?'Tringle':n.p?n.p+(n.p>1?' portes':' porte'):''}</text>`;return s};
+  (function f(n){const p=n.pt.join(',');
+    if(n.cs){const r=n.r;o+=`<rect data-p="${p}" x="${r.x}" y="${H-r.z-r.h}" width="${r.w}" height="${r.h}" class="cw"/>`;if(!n.k)o+=cell(n,n.i,p)}
+    else if(!n.m)o+=cell(n,n.r,p);
+    if(n.k){n.k.forEach(f);
+      if(!n.m){const V=n.d==='v',g=c.tInt,pad=Math.max(0,(fs*.45-g)/2);
+        for(let i=0;i<n.k.length-1;i++){const a=n.k[i].r,bx=V?a.x+a.w:a.x,bw=V?g:a.w,bh=V?a.h:g,by=H-(V?a.z:a.z-g)-bh,id=p+'#'+i,on=selB&&selB.p.join(',')===p&&selB.i===i;
+          o+=`<rect data-b="${id}" x="${bx}" y="${by}" width="${bw}" height="${bh}" class="bdr${on?' bsel':''}"/><rect data-b="${id}" x="${bx-(V?pad:0)}" y="${by-(V?0:pad)}" width="${bw+(V?2*pad:0)}" height="${bh+(V?0:2*pad)}" class="bdh"/>`}}}})(T);
+  const hl1=nn=>{const a=nn.r;return `<rect x="${a.x}" y="${H-a.z-a.h}" width="${a.w}" height="${a.h}" class="sl"/>`};
+  if(multi||selM.length>1)selM.forEach(k=>{o+=hl1(node(pth(k)))});else if(!selB)o+=hl1(node(sel));
+  if(Math.abs(c.H-c.Hd)>.5){const top=c.obH!=='bas',y0=top?H-c.H:c.H,y1=top?H-c.Hd:c.Hd;o+=`<line x1="0" y1="${y0}" x2="${W}" y2="${y1}" class="hobl"/>`}
+  $('sch').setAttribute('viewBox',`-25 -25 ${W+50} ${H+50}`);$('sch').innerHTML=o;
+  $('bc').textContent=selB?'Planche sélectionnée (touchez une case pour revenir aux cases)':(multi||selM.length>1)?selM.length+' case(s) sélectionnée(s) — touchez une case pour l’ajouter ou la retirer':'Zone sélectionnée : '+(sel.length?'case '+sel.map(i=>i+1).join('.'):'module entier (racine)')}
+function treeStats(){let cells=0,dr=0,dp=0,ro=0,mod=0;(function f(n){if(n.cs)mod++;if(!n.k&&!n.m){cells++;if(n.t==='tiroir')dr++;if(n.t==='tringle')ro++}if(n.p)dp+=n.p;if(n.k)n.k.forEach(f)})(T);
+  const pl=(n,a)=>n+' '+a+(n>1?'s':'');return [pl(mod,'caisson'),pl(cells,'case'),pl(dr,'tiroir'),pl(dp,'porte'),pl(ro,'tringle')].join(' · ')}
+function renderEd(){if(edSpecial())return;const n=node(sel),r=n.cs?n.i:n.r,par=sel.length?node(sel.slice(0,-1)):null,kind=n.m?'Groupe de modules':n.cs?'Caisson':'Case',leaf=!n.k&&!n.m;
+  let o=`<h3 style="margin-top:0">${kind} ${sel.length?sel.map(i=>i+1).join('.'):'(module entier)'} <span class="mut">— ${R(r.w)} × ${R(r.h)} mm</span></h3>`;
+  if(!n.m){
+    o+=`<div class="eqb"><b>🧰 Équipement de la zone</b><div class="g">`;
+    if(leaf)o+=`<label>Contenu<select id="ed_t" onchange="setC()"><option value="vide">Ouvert (vide)</option><option value="tiroir">Tiroir</option><option value="tringle">Tringle (penderie)</option></select></label>`;
+    if(leaf&&n.t==='tringle')o+=`<label>Diamètre de tringle<select id="ed_rd" onchange="setC()"><option>20</option><option>25</option><option>30</option></select></label><label>Axe sous le haut de la case (mm)<input id="ed_rh" type="number" value="${n.rh>=0?n.rh:50}" onchange="setC()"></label>`;
+    o+=`<label>Portes<select id="ed_p" onchange="setC()"><option value="0">Aucune</option><option value="1">1 porte</option><option value="2">2 portes</option></select></label>`;
+    if(n.p)o+=`<label>Pose des portes<select id="ed_pm" onchange="setC()"><option value="in">Rentrante (dans le caisson)</option><option value="ov">En recouvrement (cache la tranche)</option></select></label>`;
+    o+=`</div></div><div class="eqb"><b>📚 Remplir la zone</b><div class="g"><label>Nombre d’étagères<input id="ed_ns" type="number" min="1" max="12" value="2"></label><label>Nombre de tiroirs<input id="ed_nt" type="number" min="1" max="12" value="3"></label></div><div class="btnrow"><button class="bt" onclick="fillShelves()">Ajouter les étagères (équilibrées)</button><button class="bt bt-sec" onclick="fillDrawers()">Remplir de tiroirs</button></div></div>`}
+  o+=`<details class="eqb"><summary>✂️ Division détaillée (sens, nombre, tailles)</summary><div class="g" style="margin-top:8px"><label>Sens<select id="ed_d"><option value="v">Côte à côte</option><option value="h">Empilés</option></select></label><label>Nombre<input id="ed_k" type="number" min="2" max="10" value="${n.k?n.k.length:2}"></label><label class="w2">Tailles en mm (vide = équilibré)<input id="ed_s" placeholder="ex. 300,,200" value="${n.k?n.k.map(q=>q.s||'').join(','):''}"></label></div><div class="btnrow">`;
+  if(!n.m)o+=`<button class="bt" onclick="act('int')">Diviser l’intérieur (planches)</button>`;
+  if(n.cs||n.m)o+=`<button class="bt" onclick="act('mod')">${n.m?'Modifier':'Juxtaposer'} les modules</button>`;
+  if(n.k)o+=`<button class="bt bt-danger" onclick="act('merge')">Fusionner</button>`;
+  o+=`</div></details>`;
+  if(par)o+=`<div class="eqb"><div class="g"><label>Taille dans le parent (mm)<input id="ed_z" type="number" placeholder="auto" value="${n.s||''}" onchange="setC()"></label></div></div>`;
+  if(sel.length)o+=`<button class="bt bt-sec" onclick="sel.pop();upd()">Sélectionner la zone parente</button>`;
+  $('ed').innerHTML=o;
+  if(n.k)$('ed_d').value=n.d;
+  if($('ed_p'))$('ed_p').value=n.p||0;if($('ed_pm'))$('ed_pm').value=n.pm||'in';if($('ed_t'))$('ed_t').value=n.t||'vide';if($('ed_rd'))$('ed_rd').value=n.rd||25}
+function fillShelves(){const n=node(sel);if(n.m){toast('Sélectionnez une case ou un caisson.');return}const N=Math.max(1,Math.min(12,+$('ed_ns').value|0));
+  saveState();n.k=Array.from({length:N+1},()=>({t:'vide',p:0}));n.d='h';delete n.t;upd();toast(N+' étagère'+(N>1?'s':'')+' équilibrée'+(N>1?'s':'')+'.')}
+function fillDrawers(){const n=node(sel);if(n.m){toast('Sélectionnez une case ou un caisson.');return}const N=Math.max(1,Math.min(12,+$('ed_nt').value|0));
+  saveState();n.k=Array.from({length:N},()=>({t:'tiroir',p:0}));n.d='h';delete n.t;upd();toast(N+' tiroir'+(N>1?'s':'')+'.')}
+function act(a){saveState();const n=node(sel);
+  if(a==='merge'){if(n.m){n.m=false;n.cs=true;n.t='vide';n.p=0}n.k=null;delete n.d}
+  else{const K=Math.max(2,Math.min(10,+$('ed_k').value|0)),S=$('ed_s').value.split(',').map(x=>+x||0),old=n.k||[];
+    if(a==='mod'){n.k=Array.from({length:K},(_,i)=>n.m&&old[i]?old[i]:mkcs());n.m=true;n.cs=false;delete n.t;delete n.p}
+    else{n.k=Array.from({length:K},(_,i)=>!n.m&&old[i]?old[i]:{t:'vide',p:0});delete n.t}
+    n.d=$('ed_d').value;n.k.forEach((q,i)=>{if(S[i]>0)q.s=S[i];else delete q.s})}
+  upd()}
+function setC(){saveState();const n=node(sel);if($('ed_p'))n.p=+$('ed_p').value;if($('ed_pm'))n.pm=$('ed_pm').value;if($('ed_t'))n.t=$('ed_t').value;
+  if($('ed_rd'))n.rd=+$('ed_rd').value;if($('ed_rh'))n.rh=Math.max(0,+$('ed_rh').value||0);
+  if($('ed_z')){const z=+$('ed_z').value;if(z>0)n.s=z;else delete n.s}upd()}
+
+/* ---------- Bibliothèque et armoire ---------- */
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',2600)}
+function saveStore(){try{localStorage.setItem('pm_v2',JSON.stringify({L:Library,A:AssemblyModules}))}catch(e){}}
+function loadStore(){try{const s=JSON.parse(localStorage.getItem('pm_v2')||'null');if(s){Library=s.L||[];AssemblyModules=s.A||[]}}catch(e){}}
+function saveModuleToLibrary(over){const cf=F(),m={name:cf.name,config:cf,tree:JSON.parse(JSON.stringify(T))};
+  if(over&&editing!==null&&Library[editing]){Library[editing]=m;toast('Module « '+cf.name+' » mis à jour.')}
+  else{Library.push(m);editing=Library.length-1;toast('Module « '+cf.name+' » enregistré.')}
+  renderLibrary();saveStore();refreshOut()}
+function renderLibrary(){
+  document.querySelectorAll('.btnUp').forEach(b=>b.hidden=editing===null||!Library[editing]);
+  if(!Library.length){$('libList').innerHTML='<p class="mut">Aucun module enregistré pour l’instant.</p>';$('asmTargetLib').innerHTML='<option value="">Aucun module dispo</option>';return}
+  $('libList').innerHTML=Library.map((m,i)=>`<div class="card" style="flex:1;min-width:230px;margin:0"><h3>${m.name}</h3><p class="mut">${m.config.W} × ${m.config.H} × (${m.config.Dg}/${m.config.Dd}) mm</p>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px"><button class="bt" style="margin:0" onclick="quickAdd(${i})">➕ Ajouter</button><button class="bt bt-sec" style="margin:0" onclick="editModule(${i})">✏️ Modifier</button><button class="bt bt-danger" style="margin:0" onclick="delModule(${i})">🗑️</button></div>
+    <div style="display:flex;gap:4px;align-items:center;margin-top:6px"><input id="dn${i}" type="number" min="1" max="20" value="1" style="width:64px"><button class="bt bt-sec" style="margin:0" onclick="duplicateModule(${i})">📋 Dupliquer</button></div></div>`).join('');
+  $('asmTargetLib').innerHTML=Library.map((m,i)=>`<option value="${i}">${m.name} (${m.config.W}×${m.config.H}mm)</option>`).join('')}
+function editModule(i){const m=Library[i];loadForm(m.config);T=JSON.parse(JSON.stringify(m.tree));sel=[];hist=[];redoS=[];btnHist();editing=i;upd();renderLibrary();document.querySelector('.tabs button[data-s="0"]').click();toast('Module chargé dans le concepteur.')}
+function delModule(i){Library.splice(i,1);AssemblyModules=AssemblyModules.filter(a=>a.modId!==i);AssemblyModules.forEach(a=>{if(a.modId>i)a.modId--});
+  if(editing===i)editing=null;else if(editing>i)editing--;renderLibrary();saveStore();renderAssembly()}
+function duplicateModule(i){const src=Library[i],n=Math.max(1,Math.min(20,+$('dn'+i).value|0)),base=src.name.replace(/ - Copie \d+$/,'');
+  let k=Math.max(0,...Library.filter(l=>l.name.startsWith(base+' - Copie ')).map(l=>+l.name.split('Copie ')[1]||0));
+  for(let j=0;j<n;j++){k++;const m=JSON.parse(JSON.stringify(src));m.name=base+' - Copie '+k;m.config.name=m.name;Library.push(m)}
+  renderLibrary();saveStore();toast(n+' copie'+(n>1?'s':'')+' créée'+(n>1?'s':'')+'.')}
+function quickAdd(i){const mod=Library[i],mt=mtOf(mod.config,0,0,0),last=AssemblyModules[AssemblyModules.length-1];
+  AssemblyModules.push({modId:i,name:mod.name,x:last?last.x+last.w:0,z:last?last.z:0,rot:0,w:mt.w,h:mt.h});renderAssembly()}
+function addModuleWithAnchor(){
+  const li=+$('asmTargetLib').value;if(isNaN(li)||!Library[li]){toast('Choisissez un module.');return}
+  const mod=Library[li],ai=+$('asmAnchorMod').value,face=$('asmFace').value,rot=+$('asmRot').value,mt=mtOf(mod.config,rot,0,0);let nx=0,nz=0;
+  const ref=AssemblyModules[ai];
+  if(ref){if(face==='right'){nx=ref.x+ref.w;nz=ref.z}else if(face==='left'){nx=ref.x-mt.w;nz=ref.z}else{nx=ref.x;nz=ref.z+ref.h}}
+  AssemblyModules.push({modId:li,name:mod.name+(rot?` (${rot}°)`:''),x:nx,z:nz,rot,w:mt.w,h:mt.h});renderAssembly()}
+function renderAssembly(){
+  renderLibrary();
+  const x0=Math.min(0,...AssemblyModules.map(m=>m.x)),totW=Math.max(1200,...AssemblyModules.map(m=>m.x+m.w+200)),totH=Math.max(1200,...AssemblyModules.map(m=>m.z+m.h+200)),fs=Math.max(totW-x0,totH)/40;
+  $('sch-comp').setAttribute('viewBox',`${x0-50} -50 ${totW-x0+100} ${totH+100}`);
+  $('sch-comp').innerHTML=AssemblyModules.map((am,i)=>`<rect x="${am.x}" y="${totH-am.z-am.h}" width="${am.w}" height="${am.h}" class="cw"/><text x="${am.x+am.w/2}" y="${totH-am.z-am.h/2}" font-size="${fs}" class="tx">${String.fromCharCode(65+i%26)} · ${am.name}</text>`).join('');
+  $('placedModulesList').innerHTML=AssemblyModules.map((am,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0;padding:4px;border-bottom:1px solid var(--bd)"><span><b>${String.fromCharCode(65+i%26)}</b> ${am.name} (${R(am.w)}×${R(am.h)} mm, X ${R(am.x)}, Z ${R(am.z)})</span><button class="bt bt-danger" style="padding:4px 8px;font-size:12px" onclick="removeAssemblyModule(${i})">Supprimer</button></div>`).join('')||'<p class="mut">Aucun module dans l’armoire.</p>';
+  $('asmAnchorMod').innerHTML=AssemblyModules.map((am,i)=>`<option value="${i}">${String.fromCharCode(65+i%26)}. ${am.name} (X ${R(am.x)}, Z ${R(am.z)})</option>`).join('')||'<option value="-1">Aucun module existant</option>';
+  if(AssemblyModules.length)$('asmAnchorMod').value=AssemblyModules.length-1;
+  saveStore();if(c)refreshOut()}
+function removeAssemblyModule(i){AssemblyModules.splice(i,1);renderAssembly()}
+function clearAssembly(){AssemblyModules=[];renderAssembly()}
+
+/* ---------- 3D ---------- */
+function init3(){
+  if(!window.THREE)return;
+  const cv=$('cv');ren=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  sc=new THREE.Scene();cam=new THREE.PerspectiveCamera(35,1,1,80000);
+  sc.add(new THREE.AmbientLight(0xffffff,.7));
+  const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(1,2,1.5);sc.add(dl);
+  gr=new THREE.Group();gr.scale.z=-1;sc.add(gr);
+  const ps=new Map;let pd=0;
+  cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);ps.set(e.pointerId,e)};
+  cv.onpointermove=e=>{const o=ps.get(e.pointerId);if(!o)return;ps.set(e.pointerId,e);
+    if(ps.size===1){az-=(e.clientX-o.clientX)*.01;el=Math.max(-1.4,Math.min(1.4,el+(e.clientY-o.clientY)*.01))}
+    else if(ps.size===2){const[a,b]=[...ps.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pd)zm=Math.max(.3,Math.min(3,zm*pd/d));pd=d}
+    rend()};
+  cv.onpointerup=cv.onpointercancel=e=>{ps.delete(e.pointerId);pd=0};
+  cv.onwheel=e=>{e.preventDefault();zm=Math.max(.3,Math.min(3,zm*(1+e.deltaY*.001)));rend()};
+  addEventListener('resize',rs);
+}
+function vec3(i){return i===0?new THREE.Vector3(1,0,0):i===1?new THREE.Vector3(0,0,1):new THREE.Vector3(0,1,0)}
+function mesh3(p){let geo;const pos=new THREE.Vector3(),M=new THREE.Matrix4();
+  const col=/Fond$/.test(p.name)?0xc9a97a:/Étag|Cloison/.test(p.name)?0xe9cf9f:/Porte|Façade|Filler/.test(p.name)?0xb8c9e6:0xdcb883;
+  const fin=()=>{geo.computeBoundingBox();geo.boundingBox.getCenter(pos);geo.translate(-pos.x,-pos.y,-pos.z)};
+  if(p.obl){const o=p.obl,sh=new THREE.Shape(o.pts.map(a=>new THREE.Vector2(a[0],o.zhi-a[1])));
+    geo=new THREE.ExtrudeGeometry(sh,{depth:o.th-.6,bevelEnabled:false});
+    M.makeBasis(new THREE.Vector3(Math.cos(o.ang),0,Math.sin(o.ang)),new THREE.Vector3(0,1,0),new THREE.Vector3(-Math.sin(o.ang),0,Math.cos(o.ang)));
+    geo.applyMatrix4(M);geo.translate(o.x0,0,o.y0);fin()}
+  else if(p.til){const T=p.til,sh=new THREE.Shape(p.pl.map(a=>new THREE.Vector2(a[0],a[1])));
+    geo=new THREE.ExtrudeGeometry(sh,{depth:p.th-.6,bevelEnabled:false});
+    M.makeBasis(new THREE.Vector3(T.cs,Math.sin(T.ang),0),new THREE.Vector3(0,0,1),new THREE.Vector3(-Math.sin(T.ang),T.cs,0));
+    geo.applyMatrix4(M);geo.translate(T.x0,T.za,T.y0);fin()}
+  else if(p.poly){const i=[0,1,2].filter(k=>k!==p.a),sh=new THREE.Shape(p.poly.map(a=>new THREE.Vector2(a[i[0]],a[i[1]])));
+    geo=new THREE.ExtrudeGeometry(sh,{depth:p.th-.6,bevelEnabled:false});geo.translate(0,0,p.min[p.a]+.3);
+    M.makeBasis(vec3(i[0]),vec3(i[1]),vec3(p.a));geo.applyMatrix4(M);fin()}
+  else{const b=p.v||p,m=b.min,s=b.size;geo=new THREE.BoxGeometry(s[0]-.6,s[2]-.6,s[1]-.6);pos.set(m[0]+s[0]/2,m[2]+s[2]/2,m[1]+s[1]/2)}
+  const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide}));
+  mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x4a3a22})));
+  mesh.position.copy(pos);mesh.userData.dr=p.dr;mesh.userData.dwr=p.dwr;return mesh}
+function mk3(){
+  while(gr.children.length)gr.remove(gr.children[0]);
+  GM.forEach(M=>{const g=new THREE.Group(),mt=M.mt;g.rotation.y=-mt.th;g.position.set(mt.X0,mt.Z0,mt.Y0);M.P.forEach(p=>g.add(mesh3(p)));(M.rods||[]).forEach(r=>{const geo=new THREE.CylinderGeometry(r.d/2,r.d/2,r.x1-r.x0,18);geo.rotateZ(Math.PI/2);const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:0xb0b7c3}));m.position.set((r.x0+r.x1)/2,r.z,r.y);g.add(m)});gr.add(g)});
+  gr.updateMatrixWorld(true);
+  const bb=new THREE.Box3().setFromObject(gr),sz=bb.getSize(new THREE.Vector3());ctr=bb.getCenter(new THREE.Vector3());span=Math.max(sz.x,sz.y,sz.z,300);
+  gr.children.forEach(g=>g.children.forEach(m=>{m.userData.w=m.getWorldPosition(new THREE.Vector3());m.userData.lp=m.position.clone()}));
+  ex();
+}
+function vue(a,e){az=a;el=e;rend()}
+function openAll(v){$('opD').value=v*100;$('opT').value=v*100;ex()}
+function ex(){if(!gr||!ctr)return;const e=$('ex').value/100*1.2,po=$('opD').value/100,to=$('opT').value/100;
+  gr.children.forEach(g=>g.children.forEach(m=>{const u=m.userData,w=u.w.clone().sub(ctr).multiplyScalar(1+e).add(ctr);g.worldToLocal(w);m.position.copy(w);m.rotation.y=0;
+    const dx=w.x-u.lp.x,dz=w.z-u.lp.z;
+    if(u.dwr&&to>0)m.position.z-=u.dwr.d*to;
+    if(u.dr&&po>0){const th=po*1.75*(u.dr.h==='L'?1:-1),px=u.dr.px+dx,pz=u.dr.pz+dz,cx=m.position.x-px,cz=m.position.z-pz;
+      m.position.x=px+cx*Math.cos(th)+cz*Math.sin(th);m.position.z=pz-cx*Math.sin(th)+cz*Math.cos(th);m.rotation.y=th}}));rend()}
+function rend(){if(!ren||!ctr)return;const d=span*2.2*zm;cam.position.set(ctr.x+d*Math.cos(el)*Math.sin(az),ctr.y+d*Math.sin(el),ctr.z+d*Math.cos(el)*Math.cos(az));cam.lookAt(ctr);ren.render(sc,cam)}
+function rs(){if(!ren)return;const cv=$('cv'),w=cv.clientWidth,h=cv.clientHeight;if(!w)return;ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();rend()}
+
+/* ---------- Projet : enregistrer / ouvrir (JSON) ---------- */
+function projectData(){return{app:'plan-mobilier',version:3,date:new Date().toISOString(),form:F(),tree:JSON.parse(JSON.stringify(T)),library:Library,assembly:AssemblyModules,editing}}
+async function saveProject(){
+  const name=(($('modName').value||'projet').trim().replace(/[^\p{L}\p{N}_-]+/gu,'_')||'projet')+'.json',txt=JSON.stringify(projectData(),null,1);
+  try{const d=window.claude&&await claude.use('downloads');if(d){await d.save({filename:name,data:txt});toast('Projet enregistré.');return}}
+  catch(e){if(e&&e.code==='declined')return}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}catch(e){}
+  $('projTxt').value=txt;$('projBox').hidden=false;toast('Si le téléchargement est bloqué, copiez le texte JSON affiché.')}
+function applyProject(o){if(!o||o.app!=='plan-mobilier')throw new Error('fichier non reconnu');
+  Library=o.library||[];AssemblyModules=o.assembly||[];editing=o.editing??null;if(o.form)loadForm(o.form);T=o.tree||mkcs();sel=[];hist=[];redoS=[];btnHist();
+  upd();renderLibrary();renderAssembly();toast('Projet chargé.')}
+function loadFromText(){try{applyProject(JSON.parse($('projTxt').value))}catch(er){toast('JSON invalide : '+er.message)}}
+$('loadFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{applyProject(JSON.parse(r.result))}catch(er){toast('Fichier illisible : '+er.message)}};r.readAsText(f);e.target.value=''};
+
+function preview(){
+  const W=c.W,Hg=c.H,Hd=c.Hd,Dg=c.Dg,Dd=c.Dd,Hm=Math.max(Hg,Hd),Dm=Math.max(Dg,Dd),dm=Math.min(Dg,Dd),t=c.t,fs=Math.max(W,Hm,Dm)/11,pad=fs*4.4;
+  const poly=pts=>`<polygon class="pvp" points="${pts.map(a=>R(a[0])+','+R(a[1])).join(' ')}"/>`;
+  const lab=(x,y,txt,cl,an)=>`<text x="${R(x)}" y="${R(y)}" font-size="${R(fs)}" class="${cl}" text-anchor="${an}">${txt}</text>`;
+  const sl=Math.abs(Hg-Hd)>.5,top=c.obH!=='bas';
+  const pF=sl?(top?[[0,Hm-Hg],[W,Hm-Hd],[W,Hm],[0,Hm]]:[[0,0],[W,0],[W,Hd],[0,Hg]]):[[0,0],[W,0],[W,Hm],[0,Hm]];
+  $('pvF').setAttribute('viewBox',`${-pad} ${-fs*1.2} ${W+2*pad} ${Hm+fs*3.2}`);
+  $('pvF').innerHTML=poly(pF)+lab(-fs*.4,Hm/2+fs/3,(c.sym?'H ':'Hg ')+R(Hg),'pvl','end')+lab(W+fs*.4,Hm/2+fs/3,(c.sym?'H ':'Hd ')+R(Hd),'pvr','start')+lab(W/2,Hm+fs*1.6,'Face (côté portes) · L '+R(W),'pvm','middle');
+  const tr=c.trap&&Math.abs(Dg-Dd)>.5;let pD;
+  if(tr&&c.obq==='avant')pD=[[0,0],[W,0],[W,Dd],[0,Dg]];
+  else if(tr)pD=[[0,Dm-Dg],[W,Dm-Dd],[W,Dm],[0,Dm]];
+  else pD=[[0,Dm-Dg],[t,Dm-Dg],[t,Dm-dm],[W-t,Dm-dm],[W-t,Dm-Dd],[W,Dm-Dd],[W,Dm],[0,Dm]];
+  $('pvD').setAttribute('viewBox',`${-pad} ${-fs*1.2} ${W+2*pad} ${Dm+fs*3.2}`);
+  $('pvD').innerHTML=poly(pD)+lab(-fs*.4,Dm/2+fs/3,(c.sym?'D ':'Dg ')+R(Dg),'pvl','end')+lab(W+fs*.4,Dm/2+fs/3,(c.sym?'D ':'Dd ')+R(Dd),'pvr','start')+lab(W/2,Dm+fs*1.6,'Dessus · face (portes) en bas','pvm','middle')}
+function sums(){const e=(i,t)=>{const el=$(i);if(el)el.textContent=t};
+  e('sm1',c.matC+' · '+c.t0+' mm'+(c.dc?' ×2':''));e('sm2',(c.j==='C'?'onglet 45°':'90°')+' · '+(c.fx==='V'?'vis':'Zeta P2'));
+  e('sm3',c.SL+' × '+c.SW+' mm · scie '+c.k);e('sm4','tiroir '+c.jlat+' / '+c.jvd+' · portes '+c.jg);e('amSum','— '+treeStats())}
+/* ---------- Historique, réinitialisation et division X × Y ---------- */
+let hist=[],redoS=[],selM=[],multi=false,selB=null;
+function btnHist(){document.querySelectorAll('#btnUndo,.undoB').forEach(b=>b.disabled=!hist.length);document.querySelectorAll('#btnRedo,.redoB').forEach(b=>b.disabled=!redoS.length)}
+function saveState(){hist.push(JSON.stringify(T));if(hist.length>40)hist.shift();redoS=[];btnHist()}
+function undoAction(){if(!hist.length)return;redoS.push(JSON.stringify(T));T=JSON.parse(hist.pop());sel=[];btnHist();upd();toast('Action annulée.')}
+function redoAction(){if(!redoS.length)return;hist.push(JSON.stringify(T));T=JSON.parse(redoS.pop());sel=[];btnHist();upd();toast('Action rétablie.')}
+function resetCaisson(){saveState();T=mkcs();sel=[];upd();toast('Module réinitialisé.')}
+function gridInt(a,b){const leaf=()=>({t:'vide',p:0}),row=()=>a>1?{d:'v',k:Array.from({length:a},leaf)}:leaf();return b>1?{d:'h',k:Array.from({length:b},row)}:row()}
+function applyCustomDivision(kind){const n=node(sel),a=Math.max(1,Math.min(10,+$('ed_cols').value|0)),b=Math.max(1,Math.min(10,+$('ed_rows').value|0));
+  if(a*b<2){toast('Choisissez au moins 2 sections.');return}
+  if(kind==='mod'){if(!(n.cs||n.m)){toast('Sélectionnez un caisson ou un groupe de modules.');return}
+    saveState();const g=grid(a,b),pp=n.pt;if(n.s)g.s=n.s;if(!pp.length)T=g;else node(pp.slice(0,-1)).k[pp[pp.length-1]]=g}
+  else{if(n.m){toast('Sélectionnez un caisson ou une case.');return}
+    saveState();const g=gridInt(a,b);n.k=g.k;n.d=g.d;delete n.t}
+  upd();toast('Division '+a+' × '+b+' appliquée.')}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!/INPUT|TEXTAREA|SELECT/.test((e.target.tagName||''))){
+  if(e.key==='z'){e.preventDefault();undoAction()}else if(e.key==='y'){e.preventDefault();redoAction()}}});
+
+/* ---------- Sélection multiple, planche seule, équipement groupé ---------- */
+function toggleMulti(){multi=!multi;selB=null;selM=multi&&!node(sel).k?[sel.join(',')]:[];$('btnMulti').textContent='☑️ Sélection multiple : '+(multi?'oui':'non');upd()}
+function selClear(){selM=[];selB=null;upd()}
+function selAll(){selB=null;multi=true;$('btnMulti').textContent='☑️ Sélection multiple : oui';selM=[];(function f(n){if(!n.k&&!n.m)selM.push(n.pt.join(','));else if(n.k)n.k.forEach(f)})(T);upd()}
+const pth=k=>k===''?[]:k.split(',').map(Number);
+function edSpecial(){
+  if(selB){const q=node(selB.p),V=q.d==='v',ch=q.k[selB.i].r;
+    $('ed').innerHTML=`<h3 style="margin-top:0">${V?'Cloison':'Étagère'} sélectionnée <span class="mut">— ${V?'hauteur':'largeur'} ${R(V?ch.h:ch.w)} mm, épaisseur ${c.tInt} mm</span></h3><p class="mut">Supprimer cette planche fusionne les deux cases voisines. Toutes les autres planches restent exactement à leur place.</p><div class="btnrow"><button class="bt bt-danger" onclick="deleteBoard()">🗑️ Supprimer cette planche</button><button class="bt bt-sec" onclick="selB=null;upd()">Désélectionner</button></div>`;return true}
+  if(multi||selM.length>1){const N=selM.length;
+    $('ed').innerHTML=`<h3 style="margin-top:0">☑️ Équipement groupé <span class="mut">— ${N} case${N>1?'s':''} sélectionnée${N>1?'s':''}</span></h3>${N<2?'<p class="mut">Touchez plusieurs cases sur le schéma pour les équiper ensemble.</p>':''}
+<div class="eqb"><b>🧰 Appliquer à toutes les cases sélectionnées</b><div class="g"><label>Contenu<select id="ed_gt"><option value="">(inchangé)</option><option value="vide">Ouvert (vide)</option><option value="tiroir">Tiroir</option><option value="tringle">Tringle (penderie)</option></select></label><label>Portes<select id="ed_gp"><option value="">(inchangé)</option><option value="0">Aucune</option><option value="1">1 porte</option><option value="2">2 portes</option></select></label><label>Pose des portes<select id="ed_gpm"><option value="">(inchangée)</option><option value="in">Rentrante</option><option value="ov">En recouvrement</option></select></label><label>Tringle : diamètre<select id="ed_grd"><option>25</option><option>20</option><option>30</option></select></label></div><div class="btnrow"><button class="bt" onclick="applyGroup()">Appliquer à la sélection</button></div></div>
+<div class="eqb"><b>🚪 Une seule porte sur toute la sélection</b><p class="mut">Cases voisines d’une même division : la porte recouvre aussi les planches situées entre elles.</p><div class="g"><label>Portes<select id="ed_gp2"><option value="1">1 porte</option><option value="2">2 portes</option></select></label><label>Pose<select id="ed_gpm2"><option value="ov">En recouvrement</option><option value="in">Rentrante</option></select></label></div><div class="btnrow"><button class="bt" onclick="groupDoor()">Poser la porte commune</button></div></div>`;return true}
+  return false}
+function applyGroup(){if(!selM.length){toast('Sélectionnez au moins une case.');return}
+  const t=$('ed_gt').value,p=$('ed_gp').value,pm=$('ed_gpm').value,rd=+$('ed_grd').value;let n0=0;
+  saveState();selM.forEach(k=>{const n=node(pth(k));if(n.m)return;n0++;if(t!==''&&!n.k){n.t=t;if(t==='tringle')n.rd=rd}if(p!=='')n.p=+p;if(pm!=='')n.pm=pm});
+  upd();toast('Équipement appliqué à '+n0+' case'+(n0>1?'s':'')+'.')}
+function groupDoor(){const paths=selM.map(pth).filter(a=>a.length);
+  if(paths.length<2){toast('Sélectionnez au moins 2 cases voisines.');return}
+  const par=paths[0].slice(0,-1);if(!paths.every(a=>a.slice(0,-1).join()===par.join())){toast('Les cases doivent appartenir à la même division.');return}
+  const idx=paths.map(a=>a[a.length-1]).sort((a,b)=>a-b);if(idx.some((v,i)=>i&&v!==idx[i-1]+1)){toast('Les cases doivent être voisines (sans case entre elles).');return}
+  const q=node(par);if(!q.k||q.m){toast('Division non compatible.');return}
+  saveState();const V=q.d==='v',gap=c.tInt,dim=ch=>R1(V?ch.r.w:ch.r.h);
+  q.k.forEach(ch=>{ch.s=dim(ch)});
+  const sub=q.k.slice(idx[0],idx[idx.length-1]+1),size=R1(sub.reduce((a,ch)=>a+dim(ch),0)+gap*(sub.length-1));
+  sub.forEach(ch=>{ch.p=0});
+  q.k.splice(idx[0],sub.length,{d:q.d,k:sub,p:+$('ed_gp2').value||1,pm:$('ed_gpm2').value,s:size});
+  selM=[];multi=false;$('btnMulti').textContent='☑️ Sélection multiple : non';sel=par.concat(idx[0]);upd();toast('Porte commune posée sur '+sub.length+' cases.')}
+function deleteBoard(){if(!selB)return;const q=node(selB.p),i=selB.i;if(!q.k||i>=q.k.length-1){selB=null;upd();return}
+  const a=q.k[i],b=q.k[i+1];
+  if(a.k||b.k){toast('Cette planche sépare des zones subdivisées : fusionnez ou videz d’abord ces zones.');return}
+  saveState();const V=q.d==='v',gap=c.tInt;
+  q.k.forEach(ch=>{ch.s=R1(V?ch.r.w:ch.r.h)});
+  const m={t:(a.t&&a.t!=='vide')?a.t:(b.t||'vide'),p:a.p||b.p||0,pm:a.p?a.pm:b.pm,rd:a.rd||b.rd,rh:a.rh!==undefined?a.rh:b.rh,s:R1(a.s+gap+b.s)};
+  q.k.splice(i,2,m);
+  if(q.k.length===1){const ch=q.k[0];q.k=null;delete q.d;q.t=ch.t;q.p=ch.p;q.pm=ch.pm;q.rd=ch.rd;q.rh=ch.rh}
+  selB=null;upd();toast('Planche supprimée : les autres éléments n’ont pas bougé.')}
+
+/* ---------- Pilotage ---------- */
+function applySym(){const sy=$('sym').value!=='A';
+  if(sy){$('Hd').value=$('H').value;$('Dd').value=$('Dg').value;$('fillerR').checked=$('fillerL').checked}
+  ['Hd','Dd','fillerR'].forEach(i=>$(i).disabled=sy);$('obBox').hidden=sy;$('sideR').hidden=sy;$('sidesBox').style.gridTemplateColumns=sy?'1fr':'1fr 1fr';
+  $('lH').textContent=sy?'Hauteur H (mm)':'Hauteur gauche Hg (mm)';$('lD').textContent=sy?'Profondeur D (mm)':'Profondeur gauche Dg (mm)';$('lF').textContent=sy?'Fillers (des deux côtés)':'Filler gauche';
+  $('hL').textContent=sy?'Dimensions du caisson':'◀ Côté gauche';$('hR').textContent=sy?'Côté droit ▶ (= gauche)':'Côté droit ▶';
+  $('symNote').style.display=sy?'none':''}
+function upd(){
+  applySym();c=F();if(!(c.W>2*c.t&&c.H>2*c.t&&c.Hd>2*c.t&&c.SL>0&&c.SW>0&&c.Dg>0&&c.Dd>0))return;
+  WN=[];lay(T,0,0,c.W,Math.max(c.H,c.Hd),[]);sel=node(sel).pt;selM=selM.filter(k=>node(pth(k)).pt.join(',')===k);if(selB){const q=node(selB.p);if(!(q.pt.join(',')===selB.p.join(',')&&q.k&&!q.m&&selB.i<q.k.length-1))selB=null}props();schem();preview();sums();renderEd();refreshOut();
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  const s=b.dataset.s;for(let i=0;i<6;i++)$('s'+i).hidden=i!=s;
+  if(s==2)rs();if(s==1)renderAssembly()});
+$('s0').oninput=e=>{if(!e.target.id.startsWith('ed_'))upd()};
+$('sch').onclick=e=>{const b=e.target.dataset.b,p=e.target.dataset.p;
+  if(b!==undefined){const[pp,i]=b.split('#');selB={p:pth(pp),i:+i};selM=[];upd();return}
+  if(p!==undefined){selB=null;
+    if(multi||e.ctrlKey||e.shiftKey||e.metaKey){if(!multi){multi=true;$('btnMulti').textContent='☑️ Sélection multiple : oui';selM=node(sel).k?[]:[sel.join(',')]}
+      const j=selM.indexOf(p);if(j>=0)selM.splice(j,1);else selM.push(p)}
+    else selM=[];
+    sel=pth(p);upd()}};
+$('ex').oninput=ex;$('opD').oninput=ex;$('opT').oninput=ex;
+loadStore();init3();renderLibrary();upd();
+</script></body></html>
