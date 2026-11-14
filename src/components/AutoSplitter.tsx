@@ -1,8 +1,8 @@
 import React from 'react';
-import { AlertCircle, CheckCircle2, Columns, LayoutGrid, Scissors, Split } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Scissors } from 'lucide-react';
 import { CompartmentNode, ModuleConfig } from '../types/furniture';
 import { computeNesting } from '../utils/nesting';
-import { createGrid, getNode, R, R1 } from '../utils/woodworking-math';
+import { createGrid, R, R1 } from '../utils/woodworking-math';
 
 interface AutoSplitterProps {
   config: ModuleConfig;
@@ -27,12 +27,9 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
   onApplySplit,
   onOpenAménagement,
 }) => {
-  const [customX, setCustomX] = React.useState<string>('1200');
-  const [customZ, setCustomZ] = React.useState<string>('');
   const [colsCount, setColsCount] = React.useState<number>(2);
   const [rowsCount, setRowsCount] = React.useState<number>(1);
 
-  // Check if a piece fits in the raw panel (corps)
   const corpsSL = config.roles?.corps?.sheetL || config.SL;
   const corpsSW = config.roles?.corps?.sheetW || config.SW;
   const corpsRot = config.roles?.corps?.allowRot ?? config.rot;
@@ -46,7 +43,6 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
     );
   };
 
-  // Carcase parts for a given w x h
   const getCarcaseParts = (w: number, h: number) => {
     const t = config.t;
     const D = Math.max(config.Dg, config.Dd);
@@ -80,7 +76,6 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
   const carcFit = (w: number, h: number) =>
     getCarcaseParts(w, h).every((x) => fitP(x[0], x[1]));
 
-  // Find all cs nodes in tree
   const csNodes: { n: CompartmentNode; fit: boolean; proposals: SplitProposal[] }[] = [];
 
   const computeProposals = (w: number, h: number): SplitProposal[] => {
@@ -191,36 +186,37 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
     onApplySplit(node.pt || [], g);
   };
 
+  const cardCls =
+    'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-5 shadow-md dark:shadow-xl';
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Info */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col gap-3">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className={`${cardCls} flex flex-col gap-3`}>
+        <div className="flex flex-wrap items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 gap-2">
           <div className="flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-amber-400" />
-            <h3 className="text-sm font-bold text-slate-100">
+            <Scissors className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Assistant de Séparation Automatique en Modules
             </h3>
           </div>
           <span
             className={`text-xs font-semibold px-2.5 py-1 rounded ${
               oversizedCount > 0
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30'
+                : 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30'
             }`}
           >
             {oversizedCount > 0
               ? `⚠ ${oversizedCount} caisson${oversizedCount > 1 ? 's' : ''} trop grand${oversizedCount > 1 ? 's' : ''}`
-              : '✓ Tous les panneaux rentrent dans le stock brut'}
+              : '✓ Tous les panneaux rentrent dans le format brut'}
           </span>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Lorsqu'un dressing ou une bibliothèque dépasse les dimensions maximales des panneaux bruts (ex : {config.SL} × {config.SW} mm chez Carlier Bois), il est indispensable de le subdiviser en modules caissons indépendants, facilitant ainsi l'usinage, la manutention et le transport.
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          Lorsqu'un dressing ou une bibliothèque dépasse les dimensions maximales des panneaux bruts ({corpsSL} × {corpsSW} mm), il est utile de le subdiviser en modules caissons indépendants.
         </p>
       </div>
 
-      {/* Caissons Status & Proposals */}
       <div className="flex flex-col gap-4">
         {csNodes.map((item, idx) => {
           const w = item.n.r?.w || config.W;
@@ -229,56 +225,51 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
           return (
             <div
               key={idx}
-              className={`rounded-xl p-5 shadow-xl border flex flex-col gap-4 ${
+              className={`rounded-xl p-5 shadow-md dark:shadow-xl border flex flex-col gap-4 bg-white dark:bg-slate-900 ${
                 item.fit
-                  ? 'bg-slate-900 border-slate-800'
-                  : 'bg-slate-900 border-rose-500/40'
+                  ? 'border-slate-300 dark:border-slate-800'
+                  : 'border-rose-400 dark:border-rose-500/50'
               }`}
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-slate-100">
-                    Caisson {idx + 1} : {R(w)} × {R(h)} mm
-                  </span>
-                </div>
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  Caisson {idx + 1} : {R(w)} × {R(h)} mm
+                </span>
                 {item.fit ? (
-                  <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
+                  <span className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-semibold">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Rentre dans le panneau brut</span>
                   </span>
                 ) : (
-                  <span className="text-xs text-rose-400 flex items-center gap-1 font-semibold">
+                  <span className="text-xs text-rose-700 dark:text-rose-400 flex items-center gap-1 font-semibold">
                     <AlertCircle className="w-4 h-4" />
-                    <span>Dépasse le format brut de {config.SL}×{config.SW}mm</span>
+                    <span>Dépasse {corpsSL}×{corpsSW} mm</span>
                   </span>
                 )}
               </div>
 
-              {/* Automatic Proposals if not fitting */}
               {!item.fit && item.proposals.length > 0 && (
                 <div className="flex flex-col gap-3">
-                  <span className="text-xs font-bold text-amber-400">
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
                     Propositions de découpe recommandées :
                   </span>
-
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {item.proposals.map((prop, pIdx) => (
                       <div
                         key={pIdx}
-                        className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 flex flex-col justify-between gap-3 text-xs"
+                        className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-lg border border-slate-300 dark:border-slate-800 flex flex-col justify-between gap-3 text-xs"
                       >
                         <div>
-                          <span className="font-bold text-slate-200 block mb-1">
+                          <span className="font-bold text-slate-900 dark:text-slate-200 block mb-1">
                             {prop.lab}
                           </span>
-                          <span className="text-[11px] text-slate-400 block font-mono">
+                          <span className="text-[11px] text-slate-600 dark:text-slate-400 block font-mono">
                             {prop.ws.length} col. × {prop.hs.length} rangées
                           </span>
-                          <span className="text-[11px] text-amber-400/90 font-mono">
+                          <span className="text-[11px] text-amber-700 dark:text-amber-400 font-mono">
                             ({prop.ws.map(R).join(' / ')} × {prop.hs.map(R).join(' / ')} mm)
                           </span>
                         </div>
-
                         <button
                           onClick={() => handleApplyProposal(item.n, prop)}
                           className="w-full py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded shadow transition-colors"
@@ -291,32 +282,31 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
                 </div>
               )}
 
-              {/* Manual Split by Count */}
-              <div className="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800 flex flex-col gap-3 text-xs">
-                <span className="font-semibold text-slate-300">
-                  Ou diviser manuellement en nombre de caissons égaux :
+              <div className="bg-slate-50 dark:bg-slate-950/70 p-3.5 rounded-lg border border-slate-300 dark:border-slate-800 flex flex-col gap-3 text-xs">
+                <span className="font-semibold text-slate-800 dark:text-slate-300">
+                  Ou diviser manuellement en modules égaux :
                 </span>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400">Colonnes (X) :</span>
+                    <span className="text-slate-600 dark:text-slate-400">Colonnes (X) :</span>
                     <input
                       type="number"
                       min="1"
                       max="6"
                       value={colsCount}
                       onChange={(e) => setColsCount(Number(e.target.value))}
-                      className="w-16 bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 rounded font-mono text-center"
+                      className="w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 px-2 py-1 rounded font-mono text-center"
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400">Rangées (Z) :</span>
+                    <span className="text-slate-600 dark:text-slate-400">Rangées (Z) :</span>
                     <input
                       type="number"
                       min="1"
                       max="6"
                       value={rowsCount}
                       onChange={(e) => setRowsCount(Number(e.target.value))}
-                      className="w-16 bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 rounded font-mono text-center"
+                      className="w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 px-2 py-1 rounded font-mono text-center"
                     />
                   </div>
                   <button
@@ -329,7 +319,7 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
                       };
                       handleApplyProposal(item.n, prop);
                     }}
-                    className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium"
+                    className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 rounded border border-slate-300 dark:border-slate-700 font-semibold"
                   >
                     Appliquer {colsCount} × {rowsCount} modules
                   </button>

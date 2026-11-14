@@ -1,24 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Boxes,
-  Camera,
-  Compass,
-  Download,
-  Eye,
-  FileSpreadsheet,
   FolderOpen,
-  Layers,
-  Layout,
-  LayoutGrid,
-  ListOrdered,
-  Plus,
-  Printer,
-  RotateCcw,
+  Moon,
+  Redo,
   Save,
-  Scissors,
-  Sliders,
-  Sparkles,
-  Wrench,
+  Sun,
+  Undo,
 } from 'lucide-react';
 
 import {
@@ -56,7 +43,69 @@ import { MachiningCards } from './components/MachiningCards';
 import { AssemblyManager } from './components/AssemblyManager';
 import { AutoSplitter } from './components/AutoSplitter';
 
+export interface UniqueNomenclatureGroup {
+  code: string;
+  p: PartPiece;
+  q: number;
+  names: string[];
+  instanceCodes: string[];
+  placed: number;
+}
+
+// Zone code: 1 = Caisson, 2 = Intérieur, 3 = Fond, 4 = Extérieur
+function getPartZone(p: PartPiece): 1 | 2 | 3 | 4 {
+  if (p.role === 'corps') return 1;
+  if (p.role === 'interieur' || p.role === 'tiroirs') return 2;
+  if (p.role === 'fond') return 3;
+  return 4;
+}
+
+// Position code: 1 = Vertical, 2 = Horizontal, 3 = Autre (frontal / plinthe / incliné / oblique)
+function getPartPosition(p: PartPiece): 1 | 2 | 3 {
+  if (p.a === 2 && !p.til) return 2;
+  if (
+    !p.til &&
+    !p.obl &&
+    (p.a === 0 ||
+      (p.role === 'fond' && !p.poly) ||
+      (p.role === 'facades' && /Porte|Fileur/.test(p.name)))
+  ) {
+    return 1;
+  }
+  return 3;
+}
+
+// Convert 0 -> 'a', 1 -> 'b', 2 -> 'c', ..., 26 -> 'aa'
+function indexToLetters(idx: number): string {
+  let n = idx;
+  let res = '';
+  do {
+    res = String.fromCharCode(97 + (n % 26)) + res;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return res;
+}
+
 export default function App() {
+  // Theme: 'dark' (Atelier) or 'light' (Mode Soleil)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('atelier_theme');
+      return saved === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('atelier_theme', theme);
+    } catch {
+      // Ignore storage failures
+    }
+  }, [theme]);
+
   // Navigation Tabs: 0: Dimensions | 1: Séparation | 2: Aménagement | 3: Armoire | 4: Vue 3D | 5: Calepinage | 6: Nomenclature & Usinages
   const [activeTab, setActiveTab] = useState<number>(0);
 
@@ -128,7 +177,10 @@ export default function App() {
   // Keyboard shortcut listener for Ctrl+Z / Ctrl+Y
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement)?.tagName || '')) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement)?.tagName || '')
+      ) {
         if (e.key === 'z') {
           e.preventDefault();
           handleUndo();
@@ -142,10 +194,17 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undoStack, redoStack, tree]);
 
-  // Build current module result
+  // Build current module result (used for Configurator KPIs)
   const currentBuiltModule = useMemo(() => {
     return buildModule(config, tree);
   }, [config, tree]);
+
+  const currentModuleAreaM2 = useMemo(() => {
+    return currentBuiltModule.P.reduce(
+      (acc, p) => acc + ((p.L * p.l) / 1_000_000) * (p.mult || 1),
+      0
+    );
+  }, [currentBuiltModule]);
 
   // Build all assembled modules
   const shouldUseAssembly = viewSource === 'mod' ? false : assembly.length > 0;
@@ -177,21 +236,33 @@ export default function App() {
     }
   }, [shouldUseAssembly, assembly, library, config, tree]);
 
-  // All pieces in current view
-  const allPieces: PartPiece[] = useMemo(() => {
-    return builtModules.flatMap((m) => m.P);
-  }, [builtModules]);
+  // Assign structured atelier codes ([Module]-[Zone],[Position],[N°][lettre], e.g. B-1,2,1c)
+  // deterministically before nesting & 3D rendering so every view displays identical codes.
+  const { allPieces, baseGroups } = useMemo(() => {
+    const pieces = builtModules.flatMap((m) => m.P);
+    const groupMap: Record<
+      string,
+      {
+        code: string;
+        zone: 1 | 2 | 3 | 4;
+        pos: 1 | 2 | 3;
+        p: PartPiece;
+        q: number;
+        names: string[];
+        pieces: PartPiece[];
+      }
+    > = {};
+    const seqByModuleZonePos: Record<string, number> = {};
+    const orderedGroups: typeof groupMap[string][] = [];
 
-  // Group identical pieces and assign unique codes (A-1, A-2, etc.)
-  const uniqueGroups = useMemo(() => {
-    const map: Record<string, { code: string; p: PartPiece; q: number; names: string[]; placed: number }> = {};
-    const countByLetter: Record<string, number> = {};
-    const groups: { code: string; p: PartPiece; q: number; names: string[]; placed: number }[] = [];
-
-    allPieces.forEach((p) => {
+    pieces.forEach((p) => {
       const letter = p.letter || 'A';
+      const zone = getPartZone(p);
+      const pos = getPartPosition(p);
       const sig = [
         letter,
+        zone,
+        pos,
         R(p.L),
         R(p.l),
         R1(p.bt),
@@ -201,40 +272,87 @@ export default function App() {
         p.cut,
         p.pl ? JSON.stringify(p.pl.map((a) => a.map(R))) : '',
         JSON.stringify(
-          p.h.map((h) => [h.k, h.e, R(h.u || 0), R(h.v || 0), R(h.pos || 0), h.d || 0, h.depth || 0])
+          p.h.map((h) => [
+            h.k,
+            h.e,
+            R(h.u || 0),
+            R(h.v || 0),
+            R(h.pos || 0),
+            h.d || 0,
+            h.depth || 0,
+          ])
         ),
         p.mult,
       ].join('|');
 
-      if (!map[sig]) {
-        countByLetter[letter] = (countByLetter[letter] || 0) + 1;
-        const code = `${letter}-${countByLetter[letter]}`;
-        map[sig] = { code, p, q: 0, names: [], placed: 0 };
-        groups.push(map[sig]);
+      if (!groupMap[sig]) {
+        const prefixKey = `${letter}-${zone},${pos}`;
+        seqByModuleZonePos[prefixKey] = (seqByModuleZonePos[prefixKey] || 0) + 1;
+        const code = `${prefixKey},${seqByModuleZonePos[prefixKey]}`;
+        groupMap[sig] = {
+          code,
+          zone,
+          pos,
+          p,
+          q: 0,
+          names: [],
+          pieces: [],
+        };
+        orderedGroups.push(groupMap[sig]);
       }
 
-      const g = map[sig];
+      const g = groupMap[sig];
       g.q += p.mult || 1;
       if (!g.names.includes(p.name)) g.names.push(p.name);
+      g.pieces.push(p);
       p.code = g.code;
     });
 
-    return groups;
-  }, [allPieces]);
+    // Sort instances within each identical group from left-to-right / bottom-to-top
+    // and assign suffix letter (a, b, c...) when count > 1 (e.g. B-1,2,1c for the 3rd board)
+    orderedGroups.forEach((g) => {
+      g.pieces.sort((a, b) => {
+        if (g.pos === 2) {
+          // Horizontal pieces: bottom to top (Z), then left to right (X), then front to back (Y)
+          if (Math.abs(a.min[2] - b.min[2]) > 0.5) return a.min[2] - b.min[2];
+          if (Math.abs(a.min[0] - b.min[0]) > 0.5) return a.min[0] - b.min[0];
+          return a.min[1] - b.min[1];
+        }
+        // Vertical & Other pieces: left to right (X), then bottom to top (Z), then front to back (Y)
+        if (Math.abs(a.min[0] - b.min[0]) > 0.5) return a.min[0] - b.min[0];
+        if (Math.abs(a.min[2] - b.min[2]) > 0.5) return a.min[2] - b.min[2];
+        return a.min[1] - b.min[1];
+      });
+
+      const hasMultiple = g.pieces.length > 1;
+      g.pieces.forEach((piece, idx) => {
+        piece.id = hasMultiple ? `${g.code}${indexToLetters(idx)}` : g.code;
+      });
+    });
+
+    return { allPieces: pieces, baseGroups: orderedGroups };
+  }, [builtModules]);
 
   // Nesting / Cutting optimization
   const nestingResults = useMemo(() => {
     return computeNesting(allPieces, config, undefined, nestingSeed);
   }, [allPieces, config, nestingSeed]);
 
-  // Update placed count on each group based on nesting sheets
-  useEffect(() => {
-    uniqueGroups.forEach((g) => {
-      g.placed = allPieces
-        .filter((q) => q.code === g.code)
-        .reduce((acc, q) => acc + (q.sheets || []).length, 0);
+  // Combine groups with nesting placed count & sorted instance codes
+  const uniqueGroups: UniqueNomenclatureGroup[] = useMemo(() => {
+    return baseGroups.map((g) => {
+      const placed = g.pieces.reduce((acc, q) => acc + (q.sheets || []).length, 0);
+      const instanceCodes = g.pieces.map((q) => q.id || g.code);
+      return {
+        code: g.code,
+        p: g.p,
+        q: g.q,
+        names: g.names,
+        instanceCodes,
+        placed,
+      };
     });
-  }, [uniqueGroups, nestingResults, allPieces]);
+  }, [baseGroups, nestingResults]);
 
   // Hardware summary (Blum + Lamello P-System)
   const hardwareSummary = useMemo(() => {
@@ -521,158 +639,163 @@ export default function App() {
     e.target.value = '';
   };
 
+  const tabs = [
+    { id: 0, label: '1. Dimensions & Panneaux' },
+    { id: 1, label: '1.1 Séparation' },
+    { id: 2, label: '2. Aménagement' },
+    { id: 3, label: '3. Armoire' },
+    { id: 4, label: '4. Vue 3D' },
+    { id: 5, label: '5. Calepinage' },
+    { id: 6, label: '6. Fiches & Débit' },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-amber-500/20 selection:text-amber-300">
-      {/* Top Bar Contract (3 Zones: Brand Title, Nav Links, Primary CTA) */}
-      <header className="sticky top-0 z-40 flex items-center justify-between gap-8 px-6 py-3.5 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 shadow-md">
-        {/* Zone 1: Single element wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg text-slate-950 font-black text-sm">
-            AM
+    <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-amber-500/20 selection:text-amber-700 dark:selection:text-amber-300 transition-colors">
+      {/* Top Workspace Header */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 shadow-sm noprint">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+          {/* Brand & Active Target */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow text-slate-950 font-black text-sm shrink-0">
+              AM
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate">
+                  Atelier Mobilier 3D
+                </span>
+                <span className="hidden md:inline-block text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                  Carlier Bois · Blum · Lamello
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                Module actif : <b className="text-slate-800 dark:text-slate-200">{config.name}</b> ({R(config.W)}×{R(config.H)}×{R(Math.max(config.Dg, config.Dd))} mm)
+              </div>
+            </div>
           </div>
-          <span className="text-base font-bold tracking-tight text-slate-100 whitespace-nowrap">
-            Atelier Mobilier 3D
-          </span>
-          <span className="hidden sm:inline-block text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
-            Carlier Bois · Blum · Lamello P-System
-          </span>
-        </div>
 
-        {/* Zone 2: Navigation Links (Clean single line with hover) */}
-        <nav className="hidden xl:flex items-center gap-6 text-xs font-medium text-slate-400">
-          <button
-            onClick={() => setActiveTab(0)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 0 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            1. Dimensions
-          </button>
-          <button
-            onClick={() => setActiveTab(1)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 1 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            1.1 Séparation
-          </button>
-          <button
-            onClick={() => setActiveTab(2)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 2 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            2. Aménagement
-          </button>
-          <button
-            onClick={() => setActiveTab(3)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 3 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            3. Armoire & Modules
-          </button>
-          <button
-            onClick={() => setActiveTab(4)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 4 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            4. Vue 3D
-          </button>
-          <button
-            onClick={() => setActiveTab(5)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 5 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            5. Calepinage
-          </button>
-          <button
-            onClick={() => setActiveTab(6)}
-            className={`transition-colors whitespace-nowrap hover:text-slate-100 ${
-              activeTab === 6 ? 'text-amber-400 font-bold' : ''
-            }`}
-          >
-            6. Nomenclature & Débit
-          </button>
-        </nav>
+          {/* Right Utilities: Theme Switcher, History, Open/Save */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Undo/Redo */}
+            <div className="hidden sm:flex items-center gap-1 mr-1">
+              <button
+                onClick={handleUndo}
+                disabled={undoStack.length === 0}
+                title="Annuler (Ctrl+Z)"
+                className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors"
+              >
+                <Undo className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={redoStack.length === 0}
+                title="Rétablir (Ctrl+Y)"
+                className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors"
+              >
+                <Redo className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
-        {/* Zone 3: Project Actions */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium rounded-lg cursor-pointer transition-colors shadow-sm">
-            <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Ouvrir</span>
-            <input
-              type="file"
-              accept=".json,application/json"
-              onChange={handleLoadProjectFile}
-              className="hidden"
-            />
-          </label>
-
-          <button
-            onClick={saveProjectJson}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-md transition-colors"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>Enregistrer</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Secondary Mobile Tabs & Workspace Filter Bar */}
-      <div className="flex items-center justify-between px-6 py-2 bg-slate-900/60 border-b border-slate-800/80 text-xs overflow-x-auto gap-3">
-        {/* Tab Buttons Strip */}
-        <div className="flex items-center gap-1.5">
-          {[
-            { id: 0, label: '1. Dimensions' },
-            { id: 1, label: '1.1 Séparation' },
-            { id: 2, label: '2. Aménagement' },
-            { id: 3, label: '3. Armoire' },
-            { id: 4, label: '4. Vue 3D' },
-            { id: 5, label: '5. Calepinage' },
-            { id: 6, label: '6. Fiches & Débit' },
-          ].map((tab) => (
+            {/* Sun / Dark Mode Toggle */}
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-md font-medium whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+              title={
+                theme === 'dark'
+                  ? 'Passer en Mode Soleil (haute lisibilité)'
+                  : 'Passer en Mode Atelier (sombre)'
+              }
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${
+                theme === 'light'
+                  ? 'bg-amber-100 border-amber-400 text-amber-950 hover:bg-amber-200'
+                  : 'bg-slate-900 border-slate-700 text-amber-300 hover:bg-slate-800'
               }`}
             >
-              {tab.label}
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">Mode Soleil</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-slate-800" />
+                  <span className="hidden sm:inline">Mode Atelier</span>
+                </>
+              )}
             </button>
-          ))}
+
+            <label className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-slate-800 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer transition-colors shadow-sm">
+              <FolderOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="hidden md:inline">Ouvrir</span>
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={handleLoadProjectFile}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              onClick={saveProjectJson}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow transition-colors"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Enregistrer</span>
+            </button>
+          </div>
         </div>
 
-        {/* View Source Selector */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] text-slate-400 hidden md:inline">Affichage :</span>
-          <select
-            value={viewSource}
-            onChange={(e) => setViewSource(e.target.value as any)}
-            className="bg-slate-950 border border-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded"
-          >
-            <option value="auto">
-              Auto ({assembly.length > 0 ? 'Armoire complète' : 'Module actif'})
-            </option>
-            <option value="arm">Armoire assemblée ({assembly.length} modules)</option>
-            <option value="mod">Module en cours de conception seul</option>
-          </select>
+        {/* Unified Step Navigation & View Source Bar */}
+        <div className="bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800/80">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-3 overflow-x-auto">
+            <div className="flex items-center gap-1.5">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                      : 'text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-100 hover:bg-slate-200/80 dark:hover:bg-slate-800/70'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 hidden lg:inline">
+                Source 3D/Débit :
+              </span>
+              <select
+                value={viewSource}
+                onChange={(e) => setViewSource(e.target.value as 'auto' | 'arm' | 'mod')}
+                className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 text-xs px-2.5 py-1 rounded-md font-medium"
+              >
+                <option value="auto">
+                  Auto ({assembly.length > 0 ? `Armoire (${assembly.length})` : 'Module actif'})
+                </option>
+                <option value="arm">Armoire assemblée ({assembly.length} modules)</option>
+                <option value="mod">Module actif seul</option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Workspace Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
         {activeTab === 0 && (
           <ModuleConfigurator
             config={config}
+            tree={tree}
+            piecesCount={currentBuiltModule.P.length}
+            totalAreaM2={currentModuleAreaM2}
             onChange={(updated) => setConfig(syncDerivedConfig(updated))}
             onSaveToLibrary={handleSaveToLibrary}
             canOverwrite={editingLibraryIndex !== null}
+            onOpenSchematic={() => setActiveTab(2)}
+            onOpen3D={() => setActiveTab(4)}
           />
         )}
 
@@ -720,7 +843,7 @@ export default function App() {
             onSelectAllCells={() => {
               setIsMultiSelect(true);
               const all: string[] = [];
-              (function f(n) {
+              (function f(n: CompartmentNode) {
                 if (!n.k && !n.m) all.push((n.pt || []).join(','));
                 else if (n.k) n.k.forEach(f);
               })(tree);
@@ -768,6 +891,7 @@ export default function App() {
                 ? `Armoire (${builtModules.length} module${builtModules.length > 1 ? 's' : ''})`
                 : `Module actif : ${config.name}`
             }
+            isLightMode={theme === 'light'}
           />
         )}
 
@@ -799,7 +923,7 @@ export default function App() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-950 px-4 py-2 rounded-lg font-semibold text-xs shadow-2xl flex items-center gap-2 border border-amber-300">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-950 px-4 py-2 rounded-lg font-semibold text-xs shadow-2xl flex items-center gap-2 border border-amber-300 noprint">
           <span>{toastMessage}</span>
         </div>
       )}
