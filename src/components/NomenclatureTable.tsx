@@ -50,7 +50,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
       return [
         `"${g.code}"`,
         `"${g.names.join(' / ')}"`,
-        `"${p.mat}"`,
+        `"${p.matName || p.mat}"`,
         R(p.L),
         R(p.l),
         R1(p.bt),
@@ -70,6 +70,8 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
     link.click();
     document.body.removeChild(link);
   };
+
+  const activeConfig = modules[0]?.cf;
 
   return (
     <div className="flex flex-col gap-6">
@@ -123,7 +125,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
             <span className="text-amber-400 font-bold text-sm">{modules.length}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-slate-400">Débits débités :</span>
+            <span className="text-slate-400">Pièces à débiter :</span>
             <span className="text-slate-100 font-bold text-sm">{allPieces.length}</span>
           </div>
         </div>
@@ -133,7 +135,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl card-print">
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <h4 className="text-sm font-bold text-slate-100">
-            Feuille de Débit Complète (Nomenclature Panneaux)
+            Feuille de Débit Complète (Nomenclature Panneaux Carlier Bois)
           </h4>
         </div>
 
@@ -143,7 +145,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
               <tr className="bg-slate-950 text-slate-400 border-b border-slate-800">
                 <th className="py-2.5 px-3 font-semibold">Repère</th>
                 <th className="py-2.5 px-3 font-semibold">Désignation</th>
-                <th className="py-2.5 px-3 font-semibold">Matière</th>
+                <th className="py-2.5 px-3 font-semibold">Panneau Carlier Bois</th>
                 <th className="py-2.5 px-3 font-semibold text-right">L (mm)</th>
                 <th className="py-2.5 px-3 font-semibold text-right">l (mm)</th>
                 <th className="py-2.5 px-3 font-semibold text-right">Ép.</th>
@@ -167,7 +169,9 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
                     <td className="py-2.5 px-3 font-sans font-medium text-slate-200">
                       {g.names.join(' · ')}
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-slate-400">{p.mat}</td>
+                    <td className="py-2.5 px-3 font-sans text-slate-300">
+                      {p.matName || p.mat}
+                    </td>
                     <td className="py-2.5 px-3 text-right">{R(p.L)}</td>
                     <td className="py-2.5 px-3 text-right">{R(p.l)}</td>
                     <td className="py-2.5 px-3 text-right">
@@ -206,7 +210,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
         <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-3">
           <Wrench className="w-4 h-4 text-amber-400" />
           <h4 className="text-sm font-bold text-slate-100">
-            Liste Complète de Quincaillerie & Ferrures (Blum & Lamello)
+            Liste Complète de Quincaillerie & Ferrures (Blum & Lamello P-System)
           </h4>
         </div>
 
@@ -217,7 +221,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
               className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 font-sans"
             >
               <span className="text-slate-300">{item}</span>
-              <span className="font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 ml-2">
+              <span className="font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 ml-2 shrink-0">
                 × {qty}
               </span>
             </div>
@@ -236,32 +240,30 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
 
         <ol className="list-decimal list-inside space-y-2.5 text-xs text-slate-300 leading-relaxed font-sans">
           <li>
-            <b>Débit et plaquage de chants :</b> Débiter les panneaux selon le calepinage optimisé. Plaquer les chants apparents (chants avant en ABS 1mm / 2mm coordonné Carlier Bois).
+            <b>Débit et plaquage de chants :</b> Débiter chaque famille de panneaux selon son format commercial optimisé. Plaquer les chants apparents (ABS assorti Carlier Bois).
           </li>
           <li>
-            <b>Usinages et perçages :</b> Réaliser les perçages de charnières Blum Ø35 mm à 22 mm du bord selon les fiches d'usinage, les rainures Lamello Zeta P2 (ou perçages vis Confirmat Ø5 mm).
+            <b>Usinages Blum & Lamello P-System :</b> Réaliser les perçages cuvette Blum Ø35 mm à{' '}
+            {activeConfig?.hingeCupOffset ?? 22} mm du bord et les fraisages Lamello P-System / perçages selon les fiches d'usinage.
           </li>
           <li>
-            <b>Assemblage du caisson :</b> Positionner le dessous et les deux côtés (montants gauche et droit). Enclencher et verrouiller les connecteurs Clamex P-14 à la clé six pans.
+            <b>Assemblage du caisson :</b> Positionner le dessous et les deux côtés. Enclencher les connecteurs {activeConfig?.fx || 'Lamello P-System'} et verrouiller.
           </li>
           <li>
-            <b>Montage des cloisons et étagères intérieures :</b> Glisser et verrouiller les séparations verticales puis les étagères horizontales.
+            <b>Montage des cloisons et étagères intérieures :</b> Installer les séparations verticales et tablettes ({activeConfig?.fxInt === 'taquets_5mm' ? 'taquets Ø5 mm' : activeConfig?.fxInt || 'P-System'}).
           </li>
           <li>
-            <b>Pose du dessus :</b> Emboîter le panneau de dessus (horizontal ou biseauté sous-pente) et serrer.
+            <b>Pose du dessus et du fond :</b> Emboîter le dessus puis fixer le panneau de fond ({activeConfig?.tb ?? 8} mm) selon le type choisi (applique ou rainure).
           </li>
           <li>
-            <b>Fond de meuble :</b> Fixer le panneau de fond (par vis ou agrafes en applique, ou glissé dans la rainure).
+            <b>Pose des coulisses et tiroirs Blum :</b> Fixer les coulisses Blum ({activeConfig?.runnerId || 'MOVENTO'}) avec jeu latéral calibré à {activeConfig?.jlat ?? 5} mm et vertical à {activeConfig?.jvd ?? 14} mm.
           </li>
           <li>
-            <b>Pose des coulisses Blum MOVENTO :</b> Visser les coulisses à sortie totale au pas de 32 mm sur les montants intérieurs (retrait standard 37 mm).
-          </li>
-          <li>
-            <b>Montage et réglage des portes et tiroirs :</b> Clipser les portes sur leurs embases Blum CLIP top BLUMOTION. Effectuer les réglages 3D (hauteur, latéral, profondeur).
+            <b>Montage et réglage des portes :</b> Clipser les charnières Blum ({activeConfig?.hingeId || '71B3550'}) et calibrer le jeu d'ouverture ({activeConfig?.jg ?? 2} mm).
           </li>
           {modules.length > 1 && (
             <li>
-              <b>Jonction et fixation des modules :</b> Solidariser les caissons accolés par vis de liaison de meuble Ø5 mm.
+              <b>Jonction des modules :</b> Solidariser les caissons accolés par vis de liaison Ø5 mm.
             </li>
           )}
         </ol>

@@ -1,171 +1,238 @@
 /**
  * Types & Data Models for Custom Furniture CAD & Woodworking Studio
+ * Integrates Carlier Bois (Panels), Blum (Hardware & Clearances), and Lamello P-System (Joinery)
  */
 
-export type MaterialType =
-  | 'melamine_blanc'
-  | 'chene_naturel'
-  | 'chene_fume'
-  | 'noyer_canaletto'
-  | 'noir_mat'
-  | 'mdf_brut'
-  | 'contreplaque_bouleau'
-  | 'bois_massif';
+export type MaterialCategory =
+  | 'Mélaminés Décors Bois'
+  | 'Mélaminés Unis & Matières'
+  | 'Stratifiés HPL'
+  | 'Placages Bois Nobles'
+  | 'MDF & Fibres (HDF)'
+  | 'Agglomérés (Particules)'
+  | 'Contreplaqués & Multiplex'
+  | '3 Plis & Bois Massif'
+  | 'Lattés (Blockboard)'
+  | 'Compact HPL & OSB';
 
-export interface MaterialDef {
-  id: MaterialType;
-  name: string;
-  colorHex: string;
-  roughness: number;
-  metalness: number;
-  woodGrain: boolean;
-  densityKgM3: number;
-  pricePerM2Estimate: number;
+export interface PanelFormat {
+  label: string;
+  length: number; // mm (sens du fil)
+  width: number;  // mm
 }
 
-export type JointType = 'A' | 'B' | 'C'; // A: Dessus/dessous couvrent côtés | B: Côtés couvrent | C: Onglet 45°
+export interface CarlierPanel {
+  id: string;
+  brand: string;
+  category: MaterialCategory;
+  name: string;
+  code: string;
+  standardThicknesses: number[]; // mm
+  availableFormats: PanelFormat[];
+  colorHex: string;
+  grain: boolean; // Sens du fil par défaut
+  roughness: number;
+  metalness: number;
+  densityKgM3: number;
+  pricePerM2: number; // €/m² indicatif HTVA
+  edgeBandingAvailable: boolean;
+  description?: string;
+}
+
+export type PanelRole = 'corps' | 'interieur' | 'facades' | 'fond' | 'tiroirs';
+
+export interface PanelRoleConfig {
+  panelId: string;
+  thickness: number;
+  doubled: boolean;
+  sheetL: number; // Longueur commerciale modifiable (mm)
+  sheetW: number; // Largeur commerciale modifiable (mm)
+  allowRot: boolean; // Autoriser rotation au calepinage (ignorer sens du fil)
+}
+
+export type JointType = 'A' | 'B' | 'C'; // A: Dessus/dessous couvrent | B: Côtés couvrent | C: Onglet 45°
 export type BackType = 'A' | 'R' | 'N'; // A: En applique | R: En rainure | N: Sans fond
-export type FastenerType = 'Z' | 'V' | 'T'; // Z: Lamello Zeta P2 | V: Vis Confirmat | T: Tourillons + Minifix
-export type ObliqueHeightType = 'haut' | 'bas'; // Slope top or bottom
-export type ObliqueDepthType = 'fond' | 'avant'; // Slope rear or front
+export type ObliqueHeightType = 'haut' | 'bas';
+export type ObliqueDepthType = 'fond' | 'avant';
+
+export type LamelloConnectorId =
+  | 'clamex_p14'
+  | 'clamex_p10'
+  | 'clamex_medius'
+  | 'tenso_p14'
+  | 'tenso_p10'
+  | 'divario_p18'
+  | 'confirmat_7x50'
+  | 'minifix_tourillons';
+
+export type BlumHingeId =
+  | '71B3550'
+  | '71B3550-ONYX'
+  | '71B3750'
+  | '71B7550'
+  | '71B9550'
+  | '70T3550.TL';
+
+export type BlumRunnerId =
+  | 'MOVENTO_BLUMOTION'
+  | 'MOVENTO_TIPON'
+  | 'TANDEM_BLUMOTION'
+  | 'LEGRABOX_PURE'
+  | 'MERIVOBOX'
+  | 'BILLES_45';
 
 export interface ModuleConfig {
   name: string;
-  W: number; // Largeur hors-tout (mm)
-  H: number; // Hauteur gauche Hg (mm)
+  W: number;  // Largeur hors-tout (mm)
+  H: number;  // Hauteur gauche Hg (mm)
   Hd: number; // Hauteur droite Hd (mm)
   Dg: number; // Profondeur gauche Dg (mm)
   Dd: number; // Profondeur droite Dd (mm)
-  sym: boolean; // Si true, Hd = H et Dd = Dg
+  sym: boolean;
   obH: ObliqueHeightType;
   obq: ObliqueDepthType;
-  trap: boolean; // Panneaux horizontaux en trapèze
+  trap: boolean;
 
-  // Épaisseurs & Matières
-  t0: number; // Épaisseur corps (mm)
-  t: number; // Épaisseur effective (t0 * 2 si doublé)
-  dc: boolean; // Doubler les panneaux du caisson
-  matC: MaterialType;
+  // Configuration indépendante des panneaux par rôle
+  roles: {
+    corps: PanelRoleConfig;
+    interieur: PanelRoleConfig;
+    facades: PanelRoleConfig;
+    fond: PanelRoleConfig;
+    tiroirs: PanelRoleConfig;
+  };
 
-  tInt: number; // Épaisseur cloisons/étagères (mm)
-  matI: MaterialType;
-
-  t0P: number; // Épaisseur portes/façades (mm)
+  // Valeurs dérivées / compatibilité directe calcul
+  t0: number;
+  t: number;
+  dc: boolean;
+  tInt: number;
+  t0P: number;
   tP: number;
-  dp: boolean; // Doubler les portes
-  matP: MaterialType;
-
-  tTr: number; // Épaisseur caisson tiroir (mm)
-  matTr: MaterialType;
+  dp: boolean;
+  tTr: number;
+  tb: number;
+  SL: number;
+  SW: number;
+  rot: boolean;
 
   // Socle / Plinthe
   hasPlinth: boolean;
-  plinthHeight: number; // Hauteur de plinthe (mm)
-  plinthSetback: number; // Retrait de plinthe (mm)
+  plinthHeight: number;
+  plinthSetback: number;
 
   // Fileurs d'ajustement
-  fL: boolean; // Fileur gauche
-  fR: boolean; // Fileur droit
-  fW: number; // Largeur des fileurs (mm)
+  fL: boolean;
+  fR: boolean;
+  fW: number;
 
-  // Assemblage & Quincaillerie
+  // Assemblage Lamello P-System & Traditionnel
   j: JointType;
   b: BackType;
-  tb: number; // Épaisseur du fond (mm)
-  fx: FastenerType;
-  mg: number; // Marge au bout pour quincaillerie (mm)
+  fx: LamelloConnectorId;         // Fixation principale du corps
+  fxInt: LamelloConnectorId | 'taquets_5mm'; // Fixation tablettes/cloisons intérieures
+  mg: number; // Marge d'extrémité Lamello/vis (mm)
   es: number; // Entraxe max fixation (mm)
 
-  // Panneau brut & Calepinage
-  SL: number; // Longueur panneau brut (mm) - ex: 2800 ou 2400
-  SW: number; // Largeur panneau brut (mm) - ex: 2070 ou 1200
-  k: number; // Trait de scie (mm) - ex: 3.2
-  trim: number; // Parage des bords (mm) - ex: 10
-  tries: number; // Itérations d'optimisation (50 - 500)
-  rot: boolean; // Rotation autorisée (si décor sans sens du fil)
+  // Quincaillerie Blum sélectionnable
+  hingeId: BlumHingeId;
+  runnerId: BlumRunnerId;
+  autoClearances: boolean; // Adaptation automatique des jeux selon la quincaillerie
 
-  // Jeux de fonctionnement
-  jlat: number; // Jeu latéral tiroir (mm) - 12.5mm coulisse à bille
-  jvd: number; // Jeu dessus/dessous tiroir (mm)
-  jg: number; // Jeu d'ouverture portes (mm)
+  // Calepinage global
+  k: number;    // Trait de scie (mm)
+  trim: number; // Parage des bords (mm)
+  tries: number;
 
-  // Offset calculé pour faces
+  // Jeux de fonctionnement (auto-calibrés ou manuels)
+  jlat: number;          // Jeu latéral tiroir (mm)
+  jvd: number;           // Jeu vertical dessus/dessous tiroir (mm)
+  jg: number;            // Jeu d'ouverture façade/porte (mm)
+  hingeCupOffset: number; // Distance centre cuvette Ø35 au bord porte (mm)
+
   fy0?: number;
 }
 
 export type CellContentType = 'vide' | 'tiroir' | 'tringle' | 'etagere';
-export type DoorPositionType = 'in' | 'ov'; // in: rentrante | ov: en recouvrement
+export type DoorPositionType = 'in' | 'ov';
 
 export interface CompartmentNode {
-  cs?: boolean; // Est un caisson individuel
-  m?: boolean; // Est un groupe/division de modules
-  d?: 'v' | 'h'; // Direction de division: vertical (colonnes) ou horizontal (lignes)
-  k?: CompartmentNode[]; // Enfants
-  s?: number; // Taille forcée en mm (sinon équilibré)
-  t?: CellContentType; // Type de contenu
-  p?: number; // Nombre de portes (0, 1, 2)
-  pm?: DoorPositionType; // Pose des portes
-  rd?: number; // Diamètre tringle (20, 25, 30mm)
-  rh?: number; // Distance axe tringle sous plafond de case (mm)
-  shelfCount?: number; // Pour division étagères rapides
-  r?: { x: number; z: number; w: number; h: number }; // Bounding box calculé
-  i?: { x: number; z: number; w: number; h: number }; // Espace intérieur utile
-  pt?: number[]; // Chemin d'accès dans l'arbre [0, 1, ...]
+  cs?: boolean;
+  m?: boolean;
+  d?: 'v' | 'h';
+  k?: CompartmentNode[];
+  s?: number;
+  t?: CellContentType;
+  p?: number;
+  pm?: DoorPositionType;
+  rd?: number;
+  rh?: number;
+  shelfCount?: number;
+  r?: { x: number; z: number; w: number; h: number };
+  i?: { x: number; z: number; w: number; h: number };
+  pt?: number[];
 }
 
 export interface HoleSpec {
-  k: 'f' | 'q' | 'p' | 'v'; // f: perçage face, q: rainure P-10 Zeta, p: connecteur P-14 chant, v: avant-trou chant
+  k: 'f' | 'q' | 'p' | 'v'; // f: face, q: rainure P-System face, p: P-System chant, v: avant-trou vis
   u?: number;
   v?: number;
-  d?: number; // Diamètre perçage (35mm charnière, 5mm taquet/vis, etc.)
-  e?: 'g' | 'd' | 'h' | 'b'; // Chant gauche, droit, haut, bas
+  d?: number;
+  e?: 'g' | 'd' | 'h' | 'b';
   pos?: number;
   a?: 'u' | 'v';
+  depth?: number; // Profondeur fraisage/perçage (ex: 14mm ou 10mm)
+  connector?: string;
 }
 
 export interface PartPiece {
   id?: string;
   name: string;
+  role: PanelRole;
   code?: string;
   letter?: string;
-  M?: number; // Index du module
-  min: [number, number, number]; // [x, y, z]
-  size: [number, number, number]; // [w, d, h]
-  L: number; // Longueur finie (mm)
-  l: number; // Largeur finie (mm)
-  t: number; // Épaisseur brute (mm)
+  M?: number;
+  min: [number, number, number];
+  size: [number, number, number];
+  L: number;
+  l: number;
+  t: number;
   th: number;
   bt: number;
   mult: number;
-  mat: MaterialType;
-  cut: string; // Ex: '90°' ou 'biseau 18.5°'
+  mat: string;        // Panel ID
+  matName: string;    // Human readable Carlier panel name
+  colorHex: string;
+  woodGrain: boolean;
+  roughness: number;
+  metalness: number;
+  sheetL: number;     // Commercial format L for this part's panel
+  sheetW: number;     // Commercial format W for this part's panel
+  allowRot: boolean;  // Whether grain allows 90° rotation in nesting
+  cut: string;
   f?: string;
   note?: string;
-  h: HoleSpec[]; // Perçages / usinages
-  pl?: [number, number][]; // Contour polygonal si trapèze ou biseau
+  h: HoleSpec[];
+  pl?: [number, number][];
   poly?: [number, number, number][];
   v?: { min: [number, number, number]; size: [number, number, number] };
   obl?: any;
   til?: any;
-  dwr?: { d: number }; // Déplacement animation tiroir
-  dr?: { h: 'L' | 'R'; px: number; pz: number }; // Pivot animation porte
-  sheets?: string[]; // Feuilles de calepinage assignées
+  dwr?: { d: number };
+  dr?: { h: 'L' | 'R'; px: number; pz: number };
+  sheets?: string[];
   W2?: number;
   pt?: (wx: number, hz: number) => { u: number; v: number };
   a: number;
   ua: number;
   va: number;
-  // Edge banding (chants plaqués)
-  edgeL1?: boolean; // Chant longueur 1
-  edgeL2?: boolean; // Chant longueur 2
-  edgeW1?: boolean; // Chant largeur 1
-  edgeW2?: boolean; // Chant largeur 2
 }
 
 export interface HardwareItem {
   k: string;
   q: number;
   L?: number;
+  ref?: string;
   category?: 'connectors' | 'hinges' | 'runners' | 'rods' | 'handles' | 'screws';
 }
 
@@ -177,12 +244,21 @@ export interface RodItem {
   d: number;
 }
 
+export interface LamelloValidationMessage {
+  level: 'ok' | 'warning' | 'error';
+  title: string;
+  detail: string;
+}
+
 export interface BuiltModuleResult {
   P: PartPiece[];
   nj: number;
+  njInt: number;
   cf: ModuleConfig;
   hw: HardwareItem[];
   rods: RodItem[];
+  warnings: string[];
+  lamelloValidation: LamelloValidationMessage[];
   letter?: string;
   name?: string;
   mt?: {
@@ -199,7 +275,7 @@ export interface BuiltModuleResult {
 }
 
 export interface AssemblyPlacement {
-  modId: number; // Index dans la bibliothèque
+  modId: number;
   name: string;
   x: number;
   z: number;
@@ -226,16 +302,21 @@ export interface NestingItem {
   y: number;
   w: number;
   h: number;
-  rt: number; // 0 ou 1
+  rt: number;
 }
 
 export interface NestingSheet {
+  sheetL: number;
+  sheetW: number;
   free: { x: number; y: number; w: number; h: number }[];
   items: NestingItem[];
 }
 
 export interface NestingGroupResult {
   S: NestingSheet[];
+  sheetL: number;
+  sheetW: number;
+  allowRot: boolean;
   err: string[];
   errP: PartPiece[];
   area: number;
@@ -246,7 +327,7 @@ export interface NestingGroupResult {
 
 export interface FullProject {
   app: 'plan-mobilier-pro';
-  version: 4;
+  version: 5;
   date: string;
   name: string;
   client?: string;

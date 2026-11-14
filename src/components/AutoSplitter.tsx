@@ -32,13 +32,17 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
   const [colsCount, setColsCount] = React.useState<number>(2);
   const [rowsCount, setRowsCount] = React.useState<number>(1);
 
-  // Check if a piece fits in the raw panel
+  // Check if a piece fits in the raw panel (corps)
+  const corpsSL = config.roles?.corps?.sheetL || config.SL;
+  const corpsSW = config.roles?.corps?.sheetW || config.SW;
+  const corpsRot = config.roles?.corps?.allowRot ?? config.rot;
+
   const fitP = (a: number, b: number) => {
     const L = Math.max(a, b);
     const l = Math.min(a, b);
     return (
-      (L <= config.SL && l <= config.SW) ||
-      (config.rot && l <= config.SL && L <= config.SW)
+      (L <= corpsSL && l <= corpsSW) ||
+      (corpsRot && l <= corpsSL && L <= corpsSW)
     );
   };
 
@@ -107,6 +111,10 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
               L: Math.max(...d),
               l: Math.min(...d),
               mat: 'x',
+              matName: 'x',
+              sheetL: corpsSL,
+              sheetW: corpsSW,
+              allowRot: corpsRot,
               bt: 1,
               name: 'x',
               mult: 1,
@@ -114,12 +122,12 @@ export const AutoSplitter: React.FC<AutoSplitterProps> = ({
           )
         )
       );
-      const res = computeNesting(pcs, config, 0)['x — 1mm'];
+      const res = Object.values(computeNesting(pcs, config, 0))[0];
       if (res) {
         o.sh = res.S.length;
         o.ut = R(
           (100 * pcs.reduce((a, p) => a + p.L * p.l, 0)) /
-            (Math.max(1, res.S.length) * config.SL * config.SW)
+            (Math.max(1, res.S.length) * corpsSL * corpsSW)
         );
       }
       return o;

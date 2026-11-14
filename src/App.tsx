@@ -30,7 +30,12 @@ import {
   ModuleConfig,
   PartPiece,
 } from './types/furniture';
-import { DEFAULT_CONFIG, PRESET_LIBRARY } from './data/presets';
+import {
+  DEFAULT_CONFIG,
+  migrateModuleConfig,
+  PRESET_LIBRARY,
+  syncDerivedConfig,
+} from './data/presets';
 import {
   buildModule,
   createGrid,
@@ -191,10 +196,12 @@ export default function App() {
         R(p.l),
         R1(p.bt),
         p.mat,
+        p.sheetL,
+        p.sheetW,
         p.cut,
         p.pl ? JSON.stringify(p.pl.map((a) => a.map(R))) : '',
         JSON.stringify(
-          p.h.map((h) => [h.k, h.e, R(h.u || 0), R(h.v || 0), R(h.pos || 0), h.d || 0])
+          p.h.map((h) => [h.k, h.e, R(h.u || 0), R(h.v || 0), R(h.pos || 0), h.d || 0, h.depth || 0])
         ),
         p.mult,
       ].join('|');
@@ -229,21 +236,16 @@ export default function App() {
     });
   }, [uniqueGroups, nestingResults, allPieces]);
 
-  // Hardware summary
+  // Hardware summary (Blum + Lamello P-System)
   const hardwareSummary = useMemo(() => {
     const hwMap: Record<string, number> = {};
     builtModules.forEach((m) => {
       m.hw.forEach((item) => {
-        const key = item.k + (item.L ? ` (L=${R(item.L)}mm)` : '');
+        const refTag = item.ref ? ` [${item.ref}]` : '';
+        const lenTag = item.L ? ` (L=${R(item.L)}mm)` : '';
+        const key = `${item.k}${refTag}${lenTag}`;
         hwMap[key] = (hwMap[key] || 0) + item.q;
       });
-      const fastenerKey =
-        m.cf.fx === 'V'
-          ? 'Vis Confirmat d’assemblage 7×50 mm'
-          : m.cf.fx === 'Z'
-          ? 'Connecteurs Lamello Clamex P-14 (paire)'
-          : 'Minifix Ø15 + Tourillons bois Ø8×30 mm';
-      hwMap[fastenerKey] = (hwMap[fastenerKey] || 0) + m.nj;
     });
     return hwMap;
   }, [builtModules]);
@@ -271,7 +273,7 @@ export default function App() {
   const handleEditLibraryModule = (index: number) => {
     const item = library[index];
     if (!item) return;
-    setConfig(JSON.parse(JSON.stringify(item.config)));
+    setConfig(migrateModuleConfig(JSON.parse(JSON.stringify(item.config))));
     setTree(JSON.parse(JSON.stringify(item.tree)));
     setEditingLibraryIndex(index);
     setSelectedPath([]);
@@ -470,7 +472,7 @@ export default function App() {
   const saveProjectJson = () => {
     const project: FullProject = {
       app: 'plan-mobilier-pro',
-      version: 4,
+      version: 5,
       date: new Date().toISOString(),
       name: config.name,
       form: config,
@@ -498,9 +500,16 @@ export default function App() {
     reader.onload = () => {
       try {
         const obj = JSON.parse(reader.result as string);
-        if (obj.form) setConfig(obj.form);
+        if (obj.form) setConfig(migrateModuleConfig(obj.form));
         if (obj.tree) setTree(obj.tree);
-        if (obj.library) setLibrary(obj.library);
+        if (obj.library) {
+          setLibrary(
+            obj.library.map((item: LibraryItem) => ({
+              ...item,
+              config: migrateModuleConfig(item.config),
+            }))
+          );
+        }
         if (obj.assembly) setAssembly(obj.assembly);
         if (obj.editing !== undefined) setEditingLibraryIndex(obj.editing);
         showToast('Projet chargé avec succès !');
@@ -525,7 +534,7 @@ export default function App() {
             Atelier Mobilier 3D
           </span>
           <span className="hidden sm:inline-block text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
-            Carlier Bois & Blum Pro
+            Carlier Bois · Blum · Lamello P-System
           </span>
         </div>
 
@@ -661,7 +670,7 @@ export default function App() {
         {activeTab === 0 && (
           <ModuleConfigurator
             config={config}
-            onChange={(updated) => setConfig((prev) => ({ ...prev, ...updated }))}
+            onChange={(updated) => setConfig(syncDerivedConfig(updated))}
             onSaveToLibrary={handleSaveToLibrary}
             canOverwrite={editingLibraryIndex !== null}
           />

@@ -2,41 +2,32 @@ import {
   BuiltModuleResult,
   CompartmentNode,
   HardwareItem,
-  HoleSpec,
   ModuleConfig,
+  PanelRole,
   PartPiece,
   RodItem,
 } from '../types/furniture';
+import { getPanelById } from '../data/carlier-panels';
+import { BLUM_HINGES, BLUM_RUNNERS } from '../data/blum-hardware';
+import { LAMELLO_SYSTEMS, validateLamelloConfig } from '../data/lamello-psystem';
 
 export const R = (x: number) => Math.round(x);
 export const R1 = (x: number) => Math.round(x * 10) / 10;
 
-/**
- * Creates an empty default leaf compartment node
- */
 export function mkcs(): CompartmentNode {
   return { cs: true, t: 'vide', p: 0 };
 }
 
-/**
- * Generates an X by Y grid compartment structure
- */
 export function createGrid(cols: number, rows: number): CompartmentNode {
   const row = () =>
     cols > 1 ? { m: true, d: 'v' as const, k: Array.from({ length: cols }, mkcs) } : mkcs();
   return rows > 1 ? { m: true, d: 'h' as const, k: Array.from({ length: rows }, row) } : row();
 }
 
-/**
- * Traverses path in tree to retrieve node
- */
 export function getNode(tree: CompartmentNode, path: number[]): CompartmentNode {
   return path.reduce((n, idx) => (n.k && n.k[idx] ? n.k[idx] : n), tree);
 }
 
-/**
- * Computes hardware fastener positions along a span
- */
 export function getFastenerPositions(a: number, b: number, mg: number, es: number): number[] {
   const L = b - a;
   const m = Math.min(mg, L / 4);
@@ -48,9 +39,6 @@ export function getFastenerPositions(a: number, b: number, mg: number, es: numbe
   return r;
 }
 
-/**
- * Recursive bounding-box layout computation of compartment tree
- */
 export function computeLayout(
   node: CompartmentNode,
   x: number,
@@ -85,7 +73,6 @@ export function computeLayout(
   const sumFixed = fixed.reduce((a, b) => a + b, 0);
 
   const sizes = fixed.map((s) => R1(s || (av - sumFixed) / Math.max(notFixedCount, 1)));
-  // Adjust last item to absorb rounding discrepancies
   sizes[K - 1] = R1(av - sizes.slice(0, K - 1).reduce((a, b) => a + b, 0));
 
   if (sizes.some((s) => s <= 0)) {
@@ -105,24 +92,24 @@ export function computeLayout(
   });
 }
 
-/**
- * Calculates fasteners / holes on intersecting parts
- */
 function assignHoles(
   parts: PartPiece[],
   axis: number,
   coord: [number, number, number],
   kind: 't' | 'l',
-  cf: ModuleConfig,
+  connectorId: string,
   allJointCoords: [number, number, number][]
 ) {
   allJointCoords.push(coord);
+  const isScrew = connectorId === 'confirmat_7x50' && kind === 't';
+  const lamelloSpec = LAMELLO_SYSTEMS[connectorId as keyof typeof LAMELLO_SYSTEMS];
+  const grooveDepth = lamelloSpec ? lamelloSpec.grooveDepthMm : 14;
+
   for (const p of parts) {
     if (p.til) {
       const T = p.til;
       if (coord[1] < T.y0 - 0.01 || coord[1] > T.y1 + 0.01) continue;
       const v = coord[1] - T.y0;
-      const isScrew = cf.fx === 'V' && kind === 't';
       if (axis === 2) {
         if (coord[0] >= T.x0 - 0.01 && coord[0] <= T.x1 + 0.01) {
           const zl = T.za + (coord[0] - T.x0) * T.tn;
@@ -131,7 +118,14 @@ function assignHoles(
             p.h.push(
               isScrew
                 ? { k: 'f', u: (coord[0] - T.x0) / T.cs, v, d: 5 }
-                : { k: 'q', u: (coord[0] - T.x0) / T.cs, v, a: 'v' }
+                : {
+                    k: 'q',
+                    u: (coord[0] - T.x0) / T.cs,
+                    v,
+                    a: 'v',
+                    depth: grooveDepth,
+                    connector: connectorId,
+                  }
             );
           }
         }
@@ -142,7 +136,13 @@ function assignHoles(
         if (e) {
           const zl = T.za + (coord[0] - T.x0) * T.tn;
           if (coord[2] >= zl - 0.5 && coord[2] <= zl + p.th / T.cs + 0.5) {
-            p.h.push({ k: isScrew ? 'v' : 'p', e, pos: v });
+            p.h.push({
+              k: isScrew ? 'v' : 'p',
+              e,
+              pos: v,
+              depth: grooveDepth,
+              connector: connectorId,
+            });
           }
         }
       }
@@ -160,23 +160,37 @@ function assignHoles(
 
     const u = coord[p.ua] - p.min[p.ua];
     const v = coord[p.va] - p.min[p.va];
-    const isScrew = cf.fx === 'V' && kind === 't';
 
     if (kind === 't' && axis === p.a) {
       p.h.push(
-        isScrew ? { k: 'f', u, v, d: 5 } : { k: 'q', u, v, a: p.ua === 1 ? 'u' : 'v' }
+        isScrew
+          ? { k: 'f', u, v, d: 5 }
+          : {
+              k: 'q',
+              u,
+              v,
+              a: p.ua === 1 ? 'u' : 'v',
+              depth: grooveDepth,
+              connector: connectorId,
+            }
       );
     } else {
       const d = [u, p.L - u, v, p.l - v];
       const i = d.indexOf(Math.min(...d));
       const edge = (['g', 'd', 'h', 'b'] as const)[i];
-      p.h.push({ k: isScrew ? 'v' : 'p', e: edge, pos: i < 2 ? v : u });
+      p.h.push({
+        k: isScrew ? 'v' : 'p',
+        e: edge,
+        pos: i < 2 ? v : u,
+        depth: grooveDepth,
+        connector: connectorId,
+      });
     }
   }
 }
 
 /**
- * Builds all 3D parts and machining details for a cabinet module
+ * Builds all 3D parts and machining details with per-role Carlier panels, Blum hardware, & Lamello P-System
  */
 export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModuleResult {
   const {
@@ -187,10 +201,6 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     tInt,
     tP,
     tTr,
-    matC,
-    matI,
-    matP,
-    matTr,
     j,
     b,
     tb,
@@ -200,6 +210,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     fW,
     hasPlinth,
     plinthHeight,
+    roles,
   } = cf;
 
   const Hg = cf.H;
@@ -211,7 +222,17 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
   const HW: HardwareItem[] = [];
   const ROD: RodItem[] = [];
   const warnings: string[] = [];
-  const jointCoords: [number, number, number][] = [];
+  const jointCoordsCorps: [number, number, number][] = [];
+  const jointCoordsInt: [number, number, number][] = [];
+
+  const lamelloValidation = validateLamelloConfig(cf);
+  lamelloValidation.forEach((v) => {
+    if (v.level === 'error') warnings.push(`${v.title} : ${v.detail}`);
+  });
+
+  const hinge = BLUM_HINGES[cf.hingeId] || BLUM_HINGES['71B3550'];
+  const runner = BLUM_RUNNERS[cf.runnerId] || BLUM_RUNNERS.MOVENTO_BLUMOTION;
+  const corpsConnector = LAMELLO_SYSTEMS[cf.fx] || LAMELLO_SYSTEMS.clamex_p14;
 
   const sloped = Math.abs(Hg - Hd) > 0.5;
   const obT = cf.obH !== 'bas';
@@ -219,12 +240,9 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
   const dep = (x: number) => Dg + ((Dd - Dg) * x) / W;
   const hh = (x: number) => Hg + ((Hd - Hg) * x) / W;
-  const cO = { bt: cf.t0, mult: cf.dc ? 2 : 1 };
-  const pO = { bt: cf.t0P, mult: cf.dp ? 2 : 1, mat: matP };
 
   const bevel = Math.round((Math.abs(Math.atan((Hd - Hg) / W)) * 1800) / Math.PI) / 10;
 
-  // Compute compartment tree layout
   computeLayout(tree, 0, 0, W, Hm, [], cf, warnings);
 
   const csList: CompartmentNode[] = [];
@@ -233,15 +251,39 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     else if (n.k) n.k.forEach(findCs);
   })(tree);
 
-  if (cf.fx === 'V' && j === 'C') {
-    warnings.push('Onglet 45° : les vis simples ne conviennent pas, connecteurs Zeta P2 requis.');
-  }
   if (sloped && av) {
     warnings.push('Pente en hauteur et profondeur oblique combinées : vérifier les coupes.');
   }
 
+  // Helper to resolve Carlier panel visuals & sheet specs for any role
+  const getRoleProps = (role: PanelRole, thicknessOverride?: number) => {
+    const rConf = roles[role];
+    const panel = getPanelById(rConf.panelId);
+    return {
+      role,
+      mat: panel.id,
+      matName: `${panel.name} (${panel.code})`,
+      colorHex: panel.colorHex,
+      woodGrain: panel.grain,
+      roughness: panel.roughness,
+      metalness: panel.metalness,
+      sheetL: rConf.sheetL,
+      sheetW: rConf.sheetW,
+      allowRot: rConf.allowRot,
+      bt: thicknessOverride ?? rConf.thickness,
+      mult: rConf.doubled ? 2 : 1,
+    };
+  };
+
+  const corpsO = getRoleProps('corps');
+  const intO = getRoleProps('interieur');
+  const facO = getRoleProps('facades');
+  const fondO = getRoleProps('fond');
+  const tirO = getRoleProps('tiroirs');
+
   const add = (
     name: string,
+    roleProps: ReturnType<typeof getRoleProps>,
     min: [number, number, number],
     size: [number, number, number],
     f?: string,
@@ -254,6 +296,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     const ax = [0, 1, 2].filter((i) => i !== a).sort((x, y) => size[y] - size[x]);
     const q: PartPiece = {
       name,
+      role: roleProps.role,
       min,
       size,
       f: f || '',
@@ -267,23 +310,27 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       l: size[ax[1]],
       t: size[a],
       th: o.th || size[a],
-      bt: o.bt || size[a],
-      mult: o.mult || 1,
-      mat: o.mat || matC,
+      bt: o.bt ?? roleProps.bt,
+      mult: o.mult ?? roleProps.mult,
+      mat: roleProps.mat,
+      matName: roleProps.matName,
+      colorHex: o.colorHex || roleProps.colorHex,
+      woodGrain: o.woodGrain !== undefined ? o.woodGrain : roleProps.woodGrain,
+      roughness: o.roughness !== undefined ? o.roughness : roleProps.roughness,
+      metalness: o.metalness !== undefined ? o.metalness : roleProps.metalness,
+      sheetL: roleProps.sheetL,
+      sheetW: roleProps.sheetW,
+      allowRot: roleProps.allowRot,
       poly: o.poly || null,
       obl: null,
       til: null,
-      edgeL1: true,
-      edgeL2: false,
-      edgeW1: false,
-      edgeW2: false,
     };
 
     if (o.L) {
       q.L = o.L;
       q.l = o.l;
       q.a = -1;
-      q.t = o.bt;
+      q.t = o.bt ?? roleProps.bt;
       if (o.pl) q.pl = o.pl;
     }
     if (q.poly) {
@@ -295,6 +342,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
   const vp = (
     nm: string,
+    roleProps: ReturnType<typeof getRoleProps>,
     x0: number,
     x1: number,
     zb: (x: number) => number,
@@ -315,6 +363,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       const y0 = yf(x0);
       const q = add(
         nm,
+        roleProps,
         [x0, y0, zlo],
         [x1 - x0, th, Hh],
         '',
@@ -348,6 +397,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     ];
     const q = add(
       nm,
+      roleProps,
       [x0, Math.min(yf(x0), yf(x1)), zlo],
       [x1 - x0, Math.abs(dy) + th, Hh],
       '',
@@ -406,14 +456,14 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       const bv = tc || bc;
       add(
         pre + nm,
+        corpsO,
         [x, y0, zb],
         [t, y1 - y0, zt - zb],
         full ? '' : `H − 2×${t} = ${R(zt - zb)}`,
         ct || (bv ? `biseau ${bevel}°` : '90°'),
         `Profondeur ${R(y1 - y0)} mm${
           bv ? ` · biseau de ${bevel}° chant ${tc ? 'haut' : 'bas'}` : ''
-        }`,
-        cO
+        }`
       );
     };
 
@@ -428,6 +478,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
       return add(
         pre + nm,
+        corpsO,
         [x0, y0, z],
         [x1 - x0, y1 - y0, t],
         f,
@@ -436,7 +487,6 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
           ? `Trapèze : profondeur ${R(ba - fa)} → ${R(bb - fb)} mm`
           : `Rectangulaire, prof. ${R(y1 - y0)} mm`,
         {
-          ...cO,
           poly: sk
             ? [
                 [x0, fa],
@@ -482,12 +532,13 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
       const q = add(
         pre + nm,
+        corpsO,
         [x0, ya, zmin],
         [x1 - x0, yb - ya, zmax - zmin],
         f,
         cut || `bouts à ${bevel}°`,
         `Panneau incliné de ${bevel}° (longueur ${R(len)} mm)`,
-        { ...cO, th: t, L: len, l: yb - ya, pl }
+        { th: t, L: len, l: yb - ya, pl }
       );
       q.til = { x0, x1, y0: ya, y1: yb, za, tn, cs: cs2, ang };
       return q;
@@ -501,7 +552,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
         ? til('Dessus', x0, x1, true, cut, f)
         : hp('Dessus', x0, x1, oz + Hc - t, cut, f);
 
-    // Assembly configuration
+    // Corps joinery
     if (j === 'A') {
       side('Côté gauche', ox, ox + t / 2, dL, false);
       side('Côté droit', ox + Wc - t, ox + Wc - t / 2, dR, false);
@@ -511,7 +562,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       for (const x of [ox + t / 2, ox + Wc - t / 2]) {
         for (const y of getFastenerPositions(FY(x), BY(x), cf.mg, cf.es)) {
           for (const z of [ZB(x) + t, ZT(x) - t]) {
-            assignHoles(Pm, 2, [x, y, z], 't', cf, jointCoords);
+            assignHoles(Pm, 2, [x, y, z], 't', cf.fx, jointCoordsCorps);
           }
         }
       }
@@ -524,12 +575,11 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       for (const x of [ox + t, ox + Wc - t]) {
         for (const y of getFastenerPositions(FY(x), BY(x), cf.mg, cf.es)) {
           for (const z of [ZB(x) + t / 2, ZT(x) - t / 2]) {
-            assignHoles(Pm, 0, [x, y, z], 't', cf, jointCoords);
+            assignHoles(Pm, 0, [x, y, z], 't', cf.fx, jointCoordsCorps);
           }
         }
       }
     } else {
-      // 45° mitre joints
       side('Côté gauche', ox, ox + t / 2, dL, true, '45°');
       side('Côté droit', ox + Wc - t, ox + Wc - t / 2, dR, true, '45°');
       bot(ox, ox + Wc, '45°');
@@ -538,54 +588,65 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       for (const x of [ox + t / 2, ox + Wc - t / 2]) {
         for (const y of getFastenerPositions(FY(x), BY(x), cf.mg, cf.es)) {
           for (const z of [ZB(x) + t / 2, ZT(x) - t / 2]) {
-            assignHoles(Pm, -1, [x, y, z], 'l', cf, jointCoords);
+            assignHoles(Pm, -1, [x, y, z], 'l', cf.fx, jointCoordsCorps);
           }
         }
       }
     }
 
-    // Optional socle / plinth board
     if (hasPlinth && plinthHeight > 0) {
       add(
         pre + 'Plinthe socle avant',
+        corpsO,
         [ox, FY(ox) + cf.plinthSetback, oz - plinthHeight],
         [Wc, t, plinthHeight],
         `L = ${R(Wc)}`,
         '90°',
-        `Plinthe décorative h=${plinthHeight}mm`,
-        cO
+        `Plinthe décorative h=${plinthHeight}mm`
       );
     }
 
-    // Back panel (Fond)
+    // Fond arrière (panneau indépendant rôle 'fond')
     if (b === 'A' || b === 'R') {
       const ob = !av && trap && Math.abs(dR - dL) > 0.5;
       const yf = ob ? dep : () => (av ? Dm : dm);
       vp(
         pre + 'Fond',
+        fondO,
         ox,
         ox + Wc,
         ZB,
         ZT,
         yf,
         tb,
-        b === 'R' ? 'Fond 8mm monté en rainure' : 'Fond appliqué en applique arrière',
-        { bt: tb, mat: matC }
+        b === 'R'
+          ? `Fond ${tb} mm monté en rainure arrière`
+          : `Fond ${tb} mm appliqué en feuillure arrière`
       );
     }
 
-    // Drawer builder
+    // Drawer Builder (Blum MOVENTO / TANDEM / LEGRABOX / MERIVOBOX)
     const buildDrawer = (r: { x: number; z: number; w: number; h: number }) => {
       const mk0 = Pm.length;
       const xa = r.x;
       const xb = r.x + r.w;
       const zbase = Math.max(r.z, ZB(xa) + t, ZB(xb) + t);
       const ztop = Math.min(r.z + r.h, ZT(xa) - t, ZT(xb) - t);
+
+      // Compute drawer internal clearances from selected Blum runner + jlat/jvd
       const bw = r.w - 2 * cf.jlat;
-      const bh = ztop - zbase - 2 * cf.jvd;
+      const bh = Math.max(60, ztop - zbase - 2 * cf.jvd);
       const y0 = Math.max(FY(xa), FY(xb)) + tP;
-      const ymax = Math.min(BY(xa), BY(xb)) - 10;
-      const bd = Math.max(250, Math.floor((ymax - y0) / 50) * 50);
+      const ymax = Math.min(BY(xa), BY(xb)) - 15;
+
+      // Snap nominal length NL to closest supported Blum runner length
+      const maxAvailableDepth = ymax - y0;
+      const supportedNL = runner.nominalLengthsMm.filter((nl) => nl <= maxAvailableDepth);
+      const bd =
+        supportedNL.length > 0
+          ? supportedNL[supportedNL.length - 1]
+          : runner.nominalLengthsMm[0];
+
       const x = r.x + cf.jlat;
       const z = zbase + cf.jvd;
 
@@ -594,73 +655,134 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
         return;
       }
 
-      // Drawer front
+      if (!runner.isMetalBox && tTr > runner.maxDrawerSideThicknessMm) {
+        warnings.push(
+          `Coulisse ${runner.series} : épaisseur côté tiroir max ${runner.maxDrawerSideThicknessMm} mm (actuel : ${tTr} mm).`
+        );
+      }
+
+      // Façade tiroir (utilise panneau rôle 'facades')
+      const fg = cf.jg;
       vp(
         pre + 'Façade tiroir',
-        xa + 2,
-        xb - 2,
-        (u) => Math.max(r.z + 2, ZB(u) + t + 2),
-        (u) => Math.min(r.z + r.h - 2, ZT(u) - t - 2),
+        facO,
+        xa + fg / 2,
+        xb - fg / 2,
+        (u) => Math.max(r.z + fg / 2, ZB(u) + t + fg / 2),
+        (u) => Math.min(r.z + r.h - fg / 2, ZT(u) - t - fg / 2),
         FY,
         tP,
-        'Rainure de fond 5 mm à 10 mm du bas. Poignée ou push-to-open.',
-        pO
+        `Jeu façade ${fg} mm · ${runner.name}`
       );
 
-      const cn = `Coulisses à billes ${bd} mm. Rainure de fond 5 mm.`;
-      const mo = { bt: tTr, mat: matTr };
-      add(pre + 'Côté tiroir G', [x, y0, z], [tTr, bd, bh], 'Coulisse ' + bd, '90°', cn, mo);
-      add(
-        pre + 'Côté tiroir D',
-        [x + bw - tTr, y0, z],
-        [tTr, bd, bh],
-        'Coulisse ' + bd,
-        '90°',
-        cn,
-        mo
-      );
-      add(
-        pre + 'Arrière tiroir',
-        [x + tTr, y0 + bd - tTr, z],
-        [bw - 2 * tTr, tTr, bh - 15],
-        `L − 2×${tTr} = ${R(bw - 2 * tTr)}`,
-        '90°',
-        '',
-        mo
-      );
-      add(
-        pre + 'Fond tiroir',
-        [x + tTr - 5, y0, z + 8],
-        [bw - 2 * tTr + 10, bd - tTr + 5, 5],
-        `L + 2×5 (rainures) = ${R(bw - 2 * tTr + 10)}`,
-        '90°',
-        'Fond 5 mm engagé dans rainures.',
-        { bt: 5, mat: matTr }
-      );
+      if (runner.isMetalBox) {
+        // LEGRABOX / MERIVOBOX : parois métal fournies par Blum, on débite fond et dos bois (16mm)
+        const boxW = r.w - 2 * cf.jlat;
+        const backH = Math.min(bh, 177); // Hauteur M/K standard Legrabox
+        add(
+          pre + `Dos tiroir ${runner.series}`,
+          tirO,
+          [x, y0 + bd - 16, z + 10],
+          [boxW, 16, backH],
+          `LW − ${2 * cf.jlat} = ${R(boxW)}`,
+          '90°',
+          `Dos bois 16 mm pour ${runner.name}`
+        );
+        add(
+          pre + `Fond tiroir ${runner.series}`,
+          tirO,
+          [x, y0, z],
+          [boxW, bd - 10, 16],
+          `LW − ${2 * cf.jlat} = ${R(boxW)}`,
+          '90°',
+          `Fond bois 16 mm pour parois métal ${runner.series}`
+        );
 
-      HW.push({
-        k: `Coulisses de tiroir à sortie totale ${bd} mm (paire)`,
-        q: 1,
-        category: 'runners',
-      });
-      HW.push({
-        k: 'Poignée profil aluminium / Bouton de meuble',
-        q: 1,
-        category: 'handles',
-      });
+        // Représentation visuelle 3D des deux parois métal Blum (non comptabilisées au débit bois mais visibles en 3D)
+        // Ajoutées directement au BOM Blum !
+        HW.push({
+          k: `Kit tiroir complet ${runner.name} NL ${bd} mm (parois métal + coulisses + attaches)`,
+          q: 1,
+          ref: `${runner.refBase}.${bd}`,
+          category: 'runners',
+        });
+      } else {
+        // Tiroir bois traditionnel sur MOVENTO / TANDEM / Billes
+        const cn = `${runner.name} NL ${bd} mm. Jeu latéral ${cf.jlat} mm/côté.`;
+        add(pre + 'Côté tiroir G', tirO, [x, y0, z], [tTr, bd, bh], 'NL ' + bd, '90°', cn);
+        add(
+          pre + 'Côté tiroir D',
+          tirO,
+          [x + bw - tTr, y0, z],
+          [tTr, bd, bh],
+          'NL ' + bd,
+          '90°',
+          cn
+        );
+        add(
+          pre + 'Arrière tiroir',
+          tirO,
+          [x + tTr, y0 + bd - tTr, z],
+          [bw - 2 * tTr, tTr, bh - 15],
+          `L − 2×${tTr} = ${R(bw - 2 * tTr)}`,
+          '90°',
+          ''
+        );
+        const drawerFondT = fondO.bt || 8;
+        add(
+          pre + 'Fond tiroir',
+          { ...fondO, bt: drawerFondT },
+          [x + tTr - 5, y0, z + drawerFondT],
+          [bw - 2 * tTr + 10, bd - tTr + 5, drawerFondT],
+          `L + 2×5 (rainures) = ${R(bw - 2 * tTr + 10)}`,
+          '90°',
+          `Fond ${drawerFondT} mm engagé en rainure (${fondO.matName}).`,
+          { bt: drawerFondT }
+        );
+
+        HW.push({
+          k: `${runner.name} NL ${bd} mm (la paire + verrouillages)`,
+          q: 1,
+          ref: `${runner.refBase}${bd}`,
+          category: 'runners',
+        });
+      }
+
+      if (runner.motionTechnology === 'TIP-ON BLUMOTION') {
+        HW.push({
+          k: 'Synchronisation & Unité TIP-ON BLUMOTION Blum',
+          q: 1,
+          ref: 'T60L7x40',
+          category: 'runners',
+        });
+      } else {
+        HW.push({
+          k: 'Poignée de tiroir ou profil prise de main',
+          q: 1,
+          category: 'handles',
+        });
+      }
 
       for (let i = mk0; i < Pm.length; i++) {
         Pm[i].dwr = { d: bd * 0.75 };
       }
     };
 
-    // Door builder
+    // Door Builder (Blum CLIP top BLUMOTION / 155° / Portes épaisses / TIP-ON)
     const buildDoor = (q: CompartmentNode, r: { x: number; z: number; w: number; h: number }) => {
       const k = q.p || 1;
       const ov = q.pm === 'ov';
-      const jg = cf.jg >= 0 ? cf.jg : 2;
+      const jg = cf.jg >= 0 ? cf.jg : hinge.recommendedDoorGapMm;
+      const cupOffset = cf.hingeCupOffset || hinge.cupEdgeOffsetMm;
 
-      const doorList: { q: CompartmentNode; r: { x: number; z: number; w: number; h: number } }[] = [];
+      if (tP > hinge.maxDoorThicknessMm) {
+        warnings.push(
+          `Porte de ${tP} mm > max ${hinge.maxDoorThicknessMm} mm pour ${hinge.ref}. Sélectionnez la charnière 71B9550 (portes épaisses).`
+        );
+      }
+
+      const doorList: { q: CompartmentNode; r: { x: number; z: number; w: number; h: number } }[] =
+        [];
       (function walk(z: CompartmentNode) {
         if (z.p) doorList.push({ q: z, r: z.cs ? z.i! : z.r! });
         if (z.k) z.k.forEach(walk);
@@ -698,7 +820,11 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
       if (ov) {
         xL = ol ? r.x : hasNeighbour('L') ? r.x - tInt / 2 + jg / 2 : r.x - tInt;
-        xR = orr ? r.x + r.w : hasNeighbour('R') ? r.x + r.w + tInt / 2 - jg / 2 : r.x + r.w + tInt;
+        xR = orr
+          ? r.x + r.w
+          : hasNeighbour('R')
+          ? r.x + r.w + tInt / 2 - jg / 2
+          : r.x + r.w + tInt;
         zb = ob
           ? (u) => ZB(u) + jg / 2
           : hasNeighbour('B')
@@ -733,14 +859,14 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
         const d = vp(
           pre + (k === 1 ? 'Porte' : i ? 'Porte droite' : 'Porte gauche'),
+          facO,
           xa,
           xb,
           zb,
           zt,
           yf,
           tP,
-          `${ov ? 'Pose en recouvrement' : 'Pose rentrante'}. Charnières : ${nh} cuvettes Ø35 à 22mm du bord (entraxe max 700mm).`,
-          pO
+          `${ov ? 'Recouvrement' : 'Rentrante'} · Jeu ${jg} mm · ${hinge.name} : ${nh} cuvettes Ø35 à ${cupOffset} mm du chant.`
         );
 
         d.dr = {
@@ -751,29 +877,40 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
         for (let e = 0; e < nh; e++) {
           const hz = e0 + (e * (Hh - 2 * e0)) / (nh - 1);
-          const wx = k === 2 && i === 1 ? d.W2! - 22 : 22;
+          const wx = k === 2 && i === 1 ? d.W2! - cupOffset : cupOffset;
           d.h.push({ k: 'f', ...d.pt!(wx, hz), d: 35 });
         }
 
         HW.push({
-          k: `Charnière amortie clipsable Ø35 (${ov ? 'recouvrement' : 'rentrante'})`,
+          k: `${hinge.name} (${ov ? 'recouvrement' : 'rentrante'})`,
           q: nh,
+          ref: hinge.ref,
           category: 'hinges',
         });
         HW.push({
-          k: 'Embase de charnière réglable cruciforme',
+          k: `Embase droite/cruciforme Blum EXPANDO 0 mm (${hinge.finish})`,
           q: nh,
+          ref: '177H3100E',
           category: 'hinges',
         });
-        HW.push({
-          k: 'Poignée ou loqueteau push-pull',
-          q: 1,
-          category: 'handles',
-        });
+
+        if (hinge.tipOnRequired) {
+          HW.push({
+            k: 'Loqueteau magnétique Blum TIP-ON version longue + pastille',
+            q: 1,
+            ref: '956A1004',
+            category: 'handles',
+          });
+        } else {
+          HW.push({
+            k: 'Poignée ou bouton de porte',
+            q: 1,
+            category: 'handles',
+          });
+        }
       }
     };
 
-    // Hanging rod builder
     const buildRod = (
       r: { x: number; z: number; w: number; h: number },
       q: CompartmentNode
@@ -808,7 +945,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
       });
     };
 
-    // Internal dividers and shelves traversal
+    // Internal partitions and shelves (panneaux rôle 'interieur' + quincaillerie Lamello P-System ou Taquets)
     const buildInterior = (q: CompartmentNode) => {
       const r = q.cs ? q.i! : q.r!;
       if (q.k) {
@@ -828,17 +965,18 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
             } else {
               add(
                 pre + 'Cloison verticale',
+                intO,
                 [x, y0, zlo],
                 [tInt, y1 - y0, zhi - zlo],
                 `H = ${R(zhi - zlo)}`,
                 '90°',
-                `Profondeur ${R(y1 - y0)} mm`,
-                { mat: matI }
+                `Profondeur ${R(y1 - y0)} mm`
               );
 
+              const intConn = cf.fxInt === 'taquets_5mm' ? cf.fx : cf.fxInt;
               for (const z of [zlo, zhi]) {
                 for (const y of getFastenerPositions(y0, y1, cf.mg, cf.es)) {
-                  assignHoles(Pm, 2, [xc, y, z], 't', cf, jointCoords);
+                  assignHoles(Pm, 2, [xc, y, z], 't', intConn, jointCoordsInt);
                 }
               }
             }
@@ -865,6 +1003,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
             add(
               pre + 'Étagère horizontale',
+              intO,
               [xl, y0, z],
               [r.w, y1 - y0, tInt],
               `L = ${R(r.w)}`,
@@ -873,7 +1012,6 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
                 ? `Trapèze : prof. ${R(bl - fl)} → ${R(br - fr)} mm`
                 : 'Étagère rectangulaire',
               {
-                mat: matI,
                 poly: sk
                   ? [
                       [xl, fl],
@@ -885,21 +1023,22 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
               }
             );
 
-            // Shelf support holes / fasteners
-            for (const [xCoord, fyCoord, byCoord] of [
-              [xl, fl, bl],
-              [xr, fr, br],
-            ]) {
-              for (const y of getFastenerPositions(fyCoord, byCoord, cf.mg, cf.es)) {
-                assignHoles(Pm, 0, [xCoord, y, z + tInt / 2], 't', cf, jointCoords);
+            if (cf.fxInt === 'taquets_5mm') {
+              HW.push({
+                k: 'Taquets d’étagère métalliques Ø5 mm avec ergot anti-basculement',
+                q: 4,
+                category: 'connectors',
+              });
+            } else {
+              for (const [xCoord, fyCoord, byCoord] of [
+                [xl, fl, bl],
+                [xr, fr, br],
+              ]) {
+                for (const y of getFastenerPositions(fyCoord, byCoord, cf.mg, cf.es)) {
+                  assignHoles(Pm, 0, [xCoord, y, z + tInt / 2], 't', cf.fxInt, jointCoordsInt);
+                }
               }
             }
-
-            HW.push({
-              k: 'Taquets d’étagère métalliques Ø5 mm avec ergot',
-              q: 4,
-              category: 'connectors',
-            });
           }
         }
       } else if (q.t === 'tiroir') {
@@ -916,7 +1055,7 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     buildInterior(n);
   });
 
-  // Fillers (Fileurs d'ajustement)
+  // Fillers (Fileurs d'ajustement - panneau rôle 'facades')
   const zbm = (x: number) => (sloped && !obT ? Hm - hh(x) : 0);
   const ztm = (x: number) => (sloped && obT ? hh(x) : Hm);
   const hasOverlay = (q: CompartmentNode): boolean =>
@@ -929,14 +1068,14 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
     const zh = ztm(xe);
     const q = vp(
       nm,
+      facO,
       x0,
       x1,
       () => zl,
       () => zh,
       (u) => FYm(u) - (ovAny ? tP : 0),
       tP,
-      `Aligné sur façades${ovAny ? ' (recouvrement)' : ''}`,
-      pO
+      `Aligné sur façades${ovAny ? ' (recouvrement)' : ''}`
     );
     q.f = `Fileur ${fW} × ${R(zh - zl)}`;
     return q;
@@ -947,40 +1086,38 @@ export function buildModule(cf: ModuleConfig, tree: CompartmentNode): BuiltModul
 
   cf.fy0 = ovAny ? -tP : 0;
 
-  // Add fasteners to hardware list
-  const fastenerCount = jointCoords.length;
-  if (cf.fx === 'V') {
+  // Add Lamello / Fasteners BOM
+  const njCorps = jointCoordsCorps.length;
+  if (njCorps > 0) {
     HW.push({
-      k: 'Vis Confirmat d’assemblage 7×50 mm zinguées',
-      q: fastenerCount,
-      category: 'screws',
+      k: corpsConnector.bomLabel,
+      q: njCorps,
+      category: cf.fx === 'confirmat_7x50' ? 'screws' : 'connectors',
     });
-  } else if (cf.fx === 'Z') {
+  }
+
+  const njInt = jointCoordsInt.length;
+  if (njInt > 0 && cf.fxInt !== 'taquets_5mm') {
+    const intSpec = LAMELLO_SYSTEMS[cf.fxInt];
     HW.push({
-      k: 'Connecteurs démontables Lamello Clamex P-14 / P-10 (paire)',
-      q: fastenerCount,
-      category: 'connectors',
-    });
-  } else {
-    HW.push({
-      k: 'Boîtiers excentriques Minifix Ø15 + Tourillons bois Ø8×30 mm',
-      q: fastenerCount,
-      category: 'connectors',
+      k: intSpec.bomLabel,
+      q: njInt,
+      category: cf.fxInt === 'confirmat_7x50' ? 'screws' : 'connectors',
     });
   }
 
   return {
     P: Pm,
-    nj: fastenerCount,
+    nj: njCorps,
+    njInt,
     cf,
     hw: HW,
     rods: ROD,
+    warnings,
+    lamelloValidation,
   };
 }
 
-/**
- * Computes rotation matrix & bounding box for an assembled module placement
- */
 export function getPlacementTransform(
   cf: ModuleConfig,
   rot: 0 | 90 | 180 | 270,

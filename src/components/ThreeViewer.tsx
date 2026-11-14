@@ -68,9 +68,11 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({ modules, activeSourceL
         let geo: THREE.BufferGeometry;
         const pos = new THREE.Vector3();
         const mat = getThreeMaterial(
-          p.mat,
-          /Porte|Façade|Filler/.test(p.name),
-          /Fond/.test(p.name)
+          p.colorHex || '#d8ba8e',
+          p.woodGrain ?? true,
+          p.roughness ?? 0.65,
+          p.metalness ?? 0.03,
+          p.role === 'fond'
         );
 
         const fin = () => {

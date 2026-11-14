@@ -26,8 +26,8 @@ export const NestingViewer: React.FC<NestingViewerProps> = ({
   });
 
   const renderSheetSvg = (sheet: NestingSheet, sheetIdx: number) => {
-    const SL = config.SL;
-    const SW = config.SW;
+    const SL = sheet.sheetL || config.SL;
+    const SW = sheet.sheetW || config.SW;
 
     return (
       <svg
@@ -165,11 +165,11 @@ export const NestingViewer: React.FC<NestingViewerProps> = ({
             <AlertTriangle className="w-4 h-4 text-rose-400" />
             <span>
               {oversizedParts.length} pièce{oversizedParts.length > 1 ? 's' : ''} ne rentre
-              {oversizedParts.length > 1 ? 'nt' : ''} pas dans le panneau brut ({config.SL} × {config.SW} mm) !
+              {oversizedParts.length > 1 ? 'nt' : ''} pas dans leur format commercial Carlier ({oversizedParts[0].sheetL} × {oversizedParts[0].sheetW} mm) !
             </span>
           </div>
           <p className="text-xs text-slate-300">
-            Ces pièces dépassent la longueur ou la largeur des panneaux bruts en stock. Vous pouvez autoriser la rotation (si sans sens du fil) ou découper votre caisson en plusieurs modules.
+            Ces pièces dépassent le format choisi pour leur rôle. Modifiez le format commercial dans « 1. Dimensions », autorisez la rotation (si sans sens du fil) ou subdivisez le meuble.
           </p>
           <div className="pt-1">
             <button
@@ -186,7 +186,7 @@ export const NestingViewer: React.FC<NestingViewerProps> = ({
       <div className="flex flex-col gap-5">
         {allGroups.map(([materialKey, res]) => {
           const totalAreaM2 = res.area / 1e6;
-          const panelAreaM2 = (config.SL * config.SW) / 1e6;
+          const panelAreaM2 = (res.sheetL * res.sheetW) / 1e6;
           const totalPanelAreaM2 = res.S.length * panelAreaM2;
           const efficiencyPct = R((100 * res.area) / Math.max(1, totalPanelAreaM2 * 1e6));
 
@@ -199,7 +199,8 @@ export const NestingViewer: React.FC<NestingViewerProps> = ({
                 <div>
                   <span className="text-sm font-bold text-slate-100">{materialKey}</span>
                   <span className="text-xs text-slate-400 ml-2">
-                    · {res.S.length} panneau{res.S.length > 1 ? 'x' : ''} de {config.SL}×{config.SW}mm
+                    · {res.S.length} panneau{res.S.length > 1 ? 'x' : ''} de {res.sheetL}×{res.sheetW} mm
+                    {' '}({res.allowRot ? 'Rotation autorisée' : 'Sens du fil respecté'})
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-mono">

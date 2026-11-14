@@ -116,25 +116,27 @@ export const MachiningCards: React.FC<MachiningCardsProps> = ({
   };
 
   const getHolesDescription = (p: PartPiece) => {
-    if (!p.h || p.h.length === 0) return 'Aucun perçage requis sur cette pièce.';
+    if (!p.h || p.h.length === 0) return 'Aucun usinage requis sur cette pièce.';
 
     const lines: string[] = [];
     const hingeHoles = p.h.filter((h) => h.k === 'f' && h.d === 35);
     const zetaHoles = p.h.filter((h) => h.k === 'q' || h.k === 'p');
-    const dowelHoles = p.h.filter((h) => h.k === 'f' && h.d !== 35);
+    const dowelHoles = p.h.filter((h) => (h.k === 'f' && h.d !== 35) || h.k === 'v');
 
     if (hingeHoles.length > 0) {
       lines.push(
-        `${hingeHoles.length} cuvette(s) de charnière Blum Ø35 mm (prof. 12 mm à 22 mm du bord).`
+        `${hingeHoles.length} cuvette(s) charnière Blum Ø35 mm (prof. 12 mm).`
       );
     }
     if (zetaHoles.length > 0) {
+      const depths = [...new Set(zetaHoles.map((h) => h.depth || 14))].join('/');
+      const conns = [...new Set(zetaHoles.map((h) => h.connector || 'P-System'))].join(', ');
       lines.push(
-        `${zetaHoles.length} usinage(s) pour connecteurs Lamello Zeta P-System (P-14 / P-10).`
+        `${zetaHoles.length} rainure(s) Lamello P-System (${conns} · prof. ${depths} mm).`
       );
     }
     if (dowelHoles.length > 0) {
-      lines.push(`${dowelHoles.length} perçage(s) face Ø5 mm pour taquets / vis.`);
+      lines.push(`${dowelHoles.length} perçage(s) Ø5 mm / Ø7 mm.`);
     }
 
     return lines.join(' ');
@@ -185,9 +187,11 @@ export const MachiningCards: React.FC<MachiningCardsProps> = ({
 
               {/* Specs */}
               <div className="flex flex-col gap-1 text-xs">
-                <div className="flex justify-between text-slate-400">
-                  <span>Matière :</span>
-                  <span className="text-slate-200 font-medium">{p.mat}</span>
+                <div className="flex justify-between gap-2 text-slate-400">
+                  <span className="shrink-0">Panneau :</span>
+                  <span className="text-slate-200 font-medium text-right truncate">
+                    {p.matName || p.mat}
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Dimensions finies :</span>
@@ -195,9 +199,9 @@ export const MachiningCards: React.FC<MachiningCardsProps> = ({
                     {R(p.L)} × {R(p.l)} × {R1(p.bt)} mm
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Panneau calepinage :</span>
-                  <span className="text-amber-400 font-mono text-[11px]">
+                <div className="flex justify-between gap-2 text-slate-400">
+                  <span className="shrink-0">Panneau calepinage :</span>
+                  <span className="text-amber-400 font-mono text-[11px] truncate text-right">
                     {assignedSheets || 'Hors format'}
                   </span>
                 </div>

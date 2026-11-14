@@ -1,7 +1,6 @@
 import {
   ModuleConfig,
   NestingGroupResult,
-  NestingItem,
   NestingSheet,
   PartPiece,
 } from '../types/furniture';
@@ -17,9 +16,6 @@ export const polyArea = (pl: [number, number][]) => {
   return Math.abs(a) / 2;
 };
 
-/**
- * Head-to-tail trapezoid pairing (appariement tête-bêche)
- */
 export function mateTrapezoid(p: PartPiece) {
   const pl = p.pl;
   if (!pl || pl.length !== 4) return null;
@@ -52,21 +48,23 @@ export function mateTrapezoid(p: PartPiece) {
 export function packOnce(
   items: any[],
   st: { h: string; s: string },
-  c: ModuleConfig
+  sheetL: number,
+  sheetW: number,
+  allowRot: boolean,
+  kerf: number,
+  trim: number
 ): { S: NestingSheet[]; err: any[] } {
   const S: NestingSheet[] = [];
   const err: any[] = [];
-  const k = c.k;
-  const tr = c.trim || 0;
-  const UW = c.SL - 2 * tr;
-  const UH = c.SW - 2 * tr;
+  const UW = sheetL - 2 * trim;
+  const UH = sheetW - 2 * trim;
 
   for (const it of items) {
     let best: any = null;
     for (const s of S) {
       for (let i = 0; i < s.free.length; i++) {
         const r = s.free[i];
-        for (const rt of c.rot ? [0, 1] : [0]) {
+        for (const rt of allowRot ? [0, 1] : [0]) {
           const w = rt ? it.h : it.w;
           const h = rt ? it.w : it.h;
           if (w <= r.w + 0.01 && h <= r.h + 0.01) {
@@ -88,13 +86,15 @@ export function packOnce(
 
     if (!best) {
       const f0 = it.w <= UW && it.h <= UH;
-      const f1 = c.rot && it.h <= UW && it.w <= UH;
+      const f1 = allowRot && it.h <= UW && it.w <= UH;
       if (!f0 && !f1) {
         err.push(it);
         continue;
       }
       const s: NestingSheet = {
-        free: [{ x: tr, y: tr, w: UW, h: UH }],
+        sheetL,
+        sheetW,
+        free: [{ x: trim, y: trim, w: UW, h: UH }],
         items: [],
       };
       S.push(s);
@@ -106,12 +106,12 @@ export function packOnce(
     s.items.push({ it, x: r.x, y: r.y, rt, w, h });
     s.free.splice(i, 1);
 
-    const rw = r.w - w - k;
-    const rh = r.h - h - k;
-    const aH = { x: r.x + w + k, y: r.y, w: rw, h };
-    const bH = { x: r.x, y: r.y + h + k, w: r.w, h: rh };
-    const aV = { x: r.x + w + k, y: r.y, w: rw, h: r.h };
-    const bV = { x: r.x, y: r.y + h + k, w, h: rh };
+    const rw = r.w - w - kerf;
+    const rh = r.h - h - kerf;
+    const aH = { x: r.x + w + kerf, y: r.y, w: rw, h };
+    const bH = { x: r.x, y: r.y + h + kerf, w: r.w, h: rh };
+    const aV = { x: r.x + w + kerf, y: r.y, w: rw, h: r.h };
+    const bV = { x: r.x, y: r.y + h + kerf, w, h: rh };
 
     const ar = (a: any, b: any) =>
       Math.max(Math.max(a.w, 0) * Math.max(a.h, 0), Math.max(b.w, 0) * Math.max(b.h, 0));
@@ -145,7 +145,7 @@ export function findLargestFreeRect(S: NestingSheet[]) {
 }
 
 /**
- * Optimizes cutting layout for all pieces grouped by material & thickness
+ * Optimizes cutting layout per (panel + thickness + sheet size)
  */
 export function computeNesting(
   parts: PartPiece[],
@@ -154,18 +154,27 @@ export function computeNesting(
   seed: number = 1
 ): Record<string, NestingGroupResult> {
   const tries = triesParam !== undefined ? triesParam : cf.tries >= 0 ? cf.tries : 120;
-  const groups: Record<string, PartPiece[]> = {};
+  const groups: Record<
+    string,
+    { parts: PartPiece[]; sheetL: number; sheetW: number; allowRot: boolean }
+  > = {};
   const out: Record<string, NestingGroupResult> = {};
   const tr = cf.trim || 0;
-  const UW = cf.SL - 2 * tr;
-  const UH = cf.SW - 2 * tr;
-  const fits = (w: number, h: number) =>
-    (w <= UW && h <= UH) || (cf.rot && h <= UW && w <= UH);
+  const kerf = cf.k || 3.2;
 
   parts.forEach((p) => {
-    const key = `${p.mat} — ${R1(p.bt)}mm`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(p);
+    const sL = p.sheetL || cf.SL;
+    const sW = p.sheetW || cf.SW;
+    const key = `${p.matName || p.mat} — ${R1(p.bt)}mm (${sL}×${sW})`;
+    if (!groups[key]) {
+      groups[key] = {
+        parts: [],
+        sheetL: sL,
+        sheetW: sW,
+        allowRot: p.allowRot !== undefined ? p.allowRot : cf.rot,
+      };
+    }
+    groups[key].parts.push(p);
   });
 
   const keys = [
@@ -185,8 +194,14 @@ export function computeNesting(
   }
 
   for (const gKey in groups) {
+    const grp = groups[gKey];
+    const UW = grp.sheetL - 2 * tr;
+    const UH = grp.sheetW - 2 * tr;
+    const fits = (w: number, h: number) =>
+      (w <= UW && h <= UH) || (grp.allowRot && h <= UW && w <= UH);
+
     const raw: any[] = [];
-    groups[gKey].forEach((p) => {
+    grp.parts.forEach((p) => {
       p.sheets = [];
       for (let m = 0; m < (p.mult || 1); m++) {
         raw.push({ p, w: p.L, h: p.l });
@@ -237,7 +252,7 @@ export function computeNesting(
 
     const run = (order: any[], st: any) => {
       runs++;
-      const r = packOnce(order, st, cf);
+      const r = packOnce(order, st, grp.sheetL, grp.sheetW, grp.allowRot, kerf, tr);
       const largestFree = findLargestFreeRect(r.S);
       const sc = [
         r.err.length,
@@ -288,7 +303,7 @@ export function computeNesting(
       s.items.forEach((e: any) => {
         (e.it.comp || [{ p: e.it.p }]).forEach((pt: any) => {
           if (!pt.p.sheets) pt.p.sheets = [];
-          pt.p.sheets.push(`${gKey} n°${si + 1}`);
+          pt.p.sheets.push(`${gKey} · P${si + 1}`);
           area += pt.p.pl ? polyArea(pt.p.pl) : pt.p.L * pt.p.l;
         });
       })
@@ -296,6 +311,9 @@ export function computeNesting(
 
     out[gKey] = {
       S,
+      sheetL: grp.sheetL,
+      sheetW: grp.sheetW,
+      allowRot: grp.allowRot,
       err: bestR.err.map((it: any) => it.p.name),
       errP: bestR.err.map((it: any) => it.p),
       area,
