@@ -26,6 +26,7 @@ interface NomenclatureTableProps {
   uniqueGroups: NomenclatureGroup[];
   hardwareSummary: Record<string, number>;
   onPrint: () => void;
+  onOpenQuote?: () => void;
 }
 
 export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
@@ -34,6 +35,7 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
   uniqueGroups,
   hardwareSummary,
   onPrint,
+  onOpenQuote,
 }) => {
   const exportCsv = () => {
     const headers = [
@@ -115,6 +117,15 @@ export const NomenclatureTable: React.FC<NomenclatureTableProps> = ({
             <Printer className="w-3.5 h-3.5" />
             <span>Imprimer A4 / PDF</span>
           </button>
+          {onOpenQuote && (
+            <button
+              onClick={onOpenQuote}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Créer le devis client →</span>
+            </button>
+          )}
         </div>
       </div>
 

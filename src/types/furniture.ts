@@ -337,3 +337,101 @@ export interface FullProject {
   assembly: AssemblyPlacement[];
   editing: number | null;
 }
+
+export type QuoteStatus = 'brouillon' | 'envoye' | 'accepte' | 'refuse';
+
+export type VatRate =
+  | '0.06'
+  | '0.12'
+  | '0.21'
+  | 'autoliquidation'
+  | 'intracommunautaire';
+
+export interface QuoteLine {
+  id: string;
+  type: string;
+  poste: string;
+  qte: string;
+  pu: string;
+  tot: string;
+  forcedTotal?: boolean;
+}
+
+export interface QuoteClient {
+  nom: string;
+  adr1: string;
+  adr2: string;
+  tel: string;
+  mail: string;
+}
+
+export interface QuoteDocument {
+  id: string | null;
+  number: string;
+  statut: QuoteStatus;
+  date: string;
+  validite: string;
+  auteur: string;
+  client: QuoteClient;
+  description: string;
+  lignes: QuoteLine[];
+  tva: VatRate;
+  sousTotal: string;
+  forcedSousTotal?: boolean;
+  remarques: string;
+  cree: number | null;
+  maj: number | null;
+}
+
+export interface QuoteIndexEntry {
+  id: string;
+  number: string;
+  client: string;
+  date: string;
+  total: number;
+  statut: QuoteStatus;
+  maj: number;
+}
+
+export interface HardwareRefPrices {
+  hinge110: number;
+  hinge155: number;
+  runnerMovento: number;
+  runnerTandem: number;
+  runnerLegraboxMerivobox: number;
+  runnerStandard: number;
+  lamelloClamex: number;
+  lamelloTenso: number;
+  lamelloDivario: number;
+  taquets: number;
+  tringle: number;
+  poignee: number;
+  divers: number;
+}
+
+export interface ReferencePricingConfig {
+  panelPrices: Record<string, number>;
+  panelDiscountPct: number;
+  prixChantMl: number;
+  hardwarePrices: HardwareRefPrices;
+  hardwareItemOverrides: Record<string, number>;
+}
+
+export interface QuoteCompanyParams {
+  entreprise: string;
+  sousTitre: string;
+  adresse: string;
+  tel: string;
+  mail: string;
+  tvaNum: string;
+  iban: string;
+  auteur: string;
+  validiteMois: number;
+  conditions: string;
+  unites: string[];
+  catalogue: [string, string][];
+  margeCoef: number;
+  forfaitUsinagePiece: number;
+  tarifHorairePose: number;
+}
+

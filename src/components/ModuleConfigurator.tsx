@@ -35,6 +35,11 @@ import {
 } from '../data/blum-hardware';
 import { LAMELLO_SYSTEMS, validateLamelloConfig } from '../data/lamello-psystem';
 import { PANEL_ROLES_META, syncDerivedConfig } from '../data/presets';
+import {
+  getEffectivePanelPricePerM2,
+  loadReferencePricing,
+  saveReferencePricing,
+} from '../utils/pricing';
 import { R } from '../utils/woodworking-math';
 
 interface ModuleConfiguratorProps {
@@ -79,6 +84,19 @@ export const ModuleConfigurator: React.FC<ModuleConfiguratorProps> = ({
   const [subTab, setSubTab] = useState<ConfigSubTab>('dims');
   const [activeRole, setActiveRole] = useState<PanelRole>('corps');
   const [categoryFilter, setCategoryFilter] = useState<'Toutes' | MaterialCategory>('Toutes');
+  const [pricing, setPricing] = useState(() => loadReferencePricing());
+
+  const handlePanelPriceOverride = (panelId: string, newPrice: number | null) => {
+    const nextPanelPrices = { ...pricing.panelPrices };
+    if (newPrice === null || !Number.isFinite(newPrice) || newPrice < 0) {
+      delete nextPanelPrices[panelId];
+    } else {
+      nextPanelPrices[panelId] = Math.round(newPrice * 100) / 100;
+    }
+    const nextPricing = { ...pricing, panelPrices: nextPanelPrices };
+    setPricing(nextPricing);
+    saveReferencePricing(nextPricing);
+  };
 
   const isAsymmetric = !config.sym;
 
@@ -625,9 +643,36 @@ export const ModuleConfigurator: React.FC<ModuleConfiguratorProps> = ({
                       {PANEL_ROLES_META.find((m) => m.role === activeRole)?.label} —{' '}
                       {activePanel.name}
                     </div>
-                    <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                      {activePanel.brand} · {activePanel.code} · ~{activePanel.pricePerM2.toFixed(2)}{' '}
-                      €/m² HTVA · {activePanel.densityKgM3} kg/m³
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center gap-2">
+                      <span>
+                        {activePanel.brand} · {activePanel.code} · {activePanel.densityKgM3} kg/m³
+                      </span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1">
+                        Prix réf. :
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          value={getEffectivePanelPricePerM2(activePanel.id, pricing)}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (Number.isFinite(val)) handlePanelPriceOverride(activePanel.id, val);
+                          }}
+                          className="w-16 px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono text-[11px] text-right outline-none focus:border-amber-500"
+                        />
+                        <span>€/m² HT</span>
+                        {pricing.panelPrices[activePanel.id] !== undefined && (
+                          <button
+                            type="button"
+                            onClick={() => handlePanelPriceOverride(activePanel.id, null)}
+                            title={`Réinitialiser au tarif catalogue (${activePanel.pricePerM2.toFixed(2)} €)`}
+                            className="text-[10px] text-amber-700 dark:text-amber-400 hover:underline ml-1"
+                          >
+                            Réinit.
+                          </button>
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>

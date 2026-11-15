@@ -42,6 +42,7 @@ import { NomenclatureTable } from './components/NomenclatureTable';
 import { MachiningCards } from './components/MachiningCards';
 import { AssemblyManager } from './components/AssemblyManager';
 import { AutoSplitter } from './components/AutoSplitter';
+import { QuoteManager } from './components/QuoteManager';
 
 export interface UniqueNomenclatureGroup {
   code: string;
@@ -647,6 +648,7 @@ export default function App() {
     { id: 4, label: '4. Vue 3D' },
     { id: 5, label: '5. Calepinage' },
     { id: 6, label: '6. Fiches & Débit' },
+    { id: 7, label: '7. Devis & Chiffrage' },
   ];
 
   return (
@@ -915,9 +917,21 @@ export default function App() {
               uniqueGroups={uniqueGroups}
               hardwareSummary={hardwareSummary}
               onPrint={() => window.print()}
+              onOpenQuote={() => setActiveTab(7)}
             />
             <MachiningCards uniqueGroups={uniqueGroups} allPieces={allPieces} />
           </div>
+        )}
+
+        {activeTab === 7 && (
+          <QuoteManager
+            modules={builtModules}
+            allPieces={allPieces}
+            nestingResults={nestingResults}
+            hardwareSummary={hardwareSummary}
+            projectName={config.name}
+            onShowToast={showToast}
+          />
         )}
       </main>
 
